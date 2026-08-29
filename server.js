@@ -5,6 +5,7 @@ const cors = require('cors');
 const multer = require('multer');
 const Database = require('better-sqlite3');
 const { GoogleGenAI } = require('@google/genai');
+const twilio = require('twilio');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -98,18 +99,36 @@ db.exec(`
     );
 `);
 
-// Seed default vaccinations if table is empty
-const vaxCount = db.prepare('SELECT COUNT(*) as count FROM vaccinations').get().count;
-if (vaxCount === 0) {
-    const insertVax = db.prepare(`
-        INSERT INTO vaccinations (tag, species, owner, village, district, vaccineName, status, date, nextDue)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-    insertVax.run("IND-2024-7856", "Cattle", "Ramesh Kumar", "Rampur Village", "Ghaziabad", "FMD (Foot & Mouth Disease)", "VACCINATED", "2025-11-10", "2026-05-10");
-    insertVax.run("IND-2024-7856", "Cattle", "Ramesh Kumar", "Rampur Village", "Ghaziabad", "Lumpy Skin Disease (Goat Pox)", "VACCINATED", "2025-08-15", "2026-08-15");
-    insertVax.run("IND-2024-7856", "Cattle", "Ramesh Kumar", "Rampur Village", "Ghaziabad", "HS / BQ (Blackquarter)", "UNVACCINATED", "N/A", "OVERDUE (Urgent)");
-    insertVax.run("IND-2024-9021", "Buffalo", "Suresh Gujjar", "Muradnagar", "Ghaziabad", "FMD (Foot & Mouth Disease)", "UNVACCINATED", "N/A", "IMMEDIATE");
-    insertVax.run("IND-2024-4412", "Goat", "Dinesh Yadav", "Govindpuram", "Ghaziabad", "PPR (Peste des Petits Ruminants)", "UNVACCINATED", "N/A", "OVERDUE");
+// --- TWILIO SMS CLIENT INITIALIZATION ---
+const twilioClient = (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN)
+    ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
+    : null;
+
+async function sendSMSAlert(toPhone, messageBody) {
+    if (!toPhone) return { success: false, reason: 'No phone number provided' };
+
+    let formattedPhone = toPhone.trim().replace(/[^0-9+]/g, '');
+    if (formattedPhone.length === 10) {
+        formattedPhone = '+91' + formattedPhone;
+    }
+
+    if (twilioClient && process.env.TWILIO_PHONE_NUMBER) {
+        try {
+            const message = await twilioClient.messages.create({
+                body: messageBody,
+                from: process.env.TWILIO_PHONE_NUMBER,
+                to: formattedPhone
+            });
+            console.log(`[SMS SENT] SID: ${message.sid} to ${formattedPhone}`);
+            return { success: true, sid: message.sid };
+        } catch (err) {
+            console.error(`[SMS ERROR] Failed to send to ${formattedPhone}:`, err.message);
+            return { success: false, error: err.message };
+        }
+    } else {
+        console.log(`[SIMULATED SMS DISPATCH] To: ${formattedPhone} | Message: "${messageBody}"`);
+        return { success: true, mock: true };
+    }
 }
 
 const storage = multer.diskStorage({
@@ -128,7 +147,6 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
 }
 
-// --- LIVE MAP OVERPASS API FOR VET CLINICS ---
 async function fetchRealNearestVet(lat, lng, villageName, districtName) {
     try {
         const overpassQuery = `
@@ -156,17 +174,12 @@ async function fetchRealNearestVet(lat, lng, villageName, districtName) {
                     if (dist < shortestDist) {
                         shortestDist = dist;
                         const tags = el.tags || {};
-                        const name = tags.name || tags['name:en'] || tags['name:hi'] || 'Government Veterinary Hospital / Clinic';
-                        const road = tags['addr:street'] || tags['addr:suburb'] || tags['addr:city'] || tags['addr:village'] || '';
-                        const phone = tags.phone || tags['contact:phone'] || tags['contact:mobile'] || '1962 (National Animal Helpline)';
-                        const operator = tags.operator || tags.doctor || 'Senior Veterinary Medical Officer';
-
                         bestMatch = {
                             isRealMapData: true,
-                            name: operator.includes('Officer') ? operator : `Dr. In-Charge (${operator})`,
-                            clinic: name,
-                            phone: phone,
-                            address: road ? `${road}, ${districtName || ''}` : `Nearby Location (${elLat.toFixed(4)}, ${elLon.toFixed(4)}), ${districtName || ''}`,
+                            name: tags.operator || tags.doctor || 'Senior Veterinary Medical Officer',
+                            clinic: tags.name || 'Government Veterinary Hospital / Clinic',
+                            phone: tags.phone || tags['contact:phone'] || '1962 (National Animal Helpline)',
+                            address: tags['addr:street'] ? `${tags['addr:street']}, ${districtName || ''}` : `Nearby Block Clinic (${elLat.toFixed(4)}, ${elLon.toFixed(4)})`,
                             latitude: elLat,
                             longitude: elLon,
                             distanceKm: dist.toFixed(1)
@@ -192,98 +205,87 @@ async function fetchRealNearestVet(lat, lng, villageName, districtName) {
     };
 }
 
-// --- GOOGLE GEMINI AI MULTIMODAL DIAGNOSTIC CORE ---
 async function analyzeWithGoogleAI(report, imagePath) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (apiKey) {
         try {
             const ai = new GoogleGenAI({ apiKey });
             const prompt = `You are a chief veterinary clinical diagnostic AI.
-Analyze this livestock disease case:
+Analyze this livestock case:
 - Species: ${report.species}
-- Checked Symptoms: ${(report.symptoms || []).join(', ')}
-- Field Notes: "${report.notes || 'None provided'}"
+- Symptoms: ${(report.symptoms || []).join(', ')}
+- Field Notes: "${report.notes || 'None'}"
 - Location: ${report.village}, ${report.district}
 
-Return STRICTLY a JSON object with this exact schema:
+Return STRICT JSON:
 {
   "identifiedSpecies": "Verified species & breed",
   "visualFindings": "Visual abnormalities and clinical signs detected",
-  "suspectedProblem": "Primary diagnosed condition (e.g. FMD Suspected, Lumpy Skin Disease, Anthrax, HS, BQ)",
-  "confidenceScore": 88,
+  "suspectedProblem": "Primary diagnosed condition (e.g. FMD Suspected, Lumpy Skin Disease, Anthrax, HS, BQ, PPR)",
+  "confidenceScore": 92,
   "severity": "CRITICAL" | "HIGH" | "MODERATE" | "LOW",
   "isZoonotic": true | false,
-  "temporarySolution": "Immediate first-aid & symptomatic relief for the farmer",
-  "aftercareProcedure": "Step-by-step long-term quarantine & biosafety protocol",
-  "sampleProtocol": "Specimen collection guidance for paravet",
-  "advisories": {
-    "en": "Urgent practical advisory in English",
-    "hi": "गाँव और पशुपालक के लिए हिंदी में सलाह"
-  }
+  "temporarySolution": "First-aid relief",
+  "aftercareProcedure": "Quarantine protocol",
+  "sampleProtocol": "Specimen protocol",
+  "advisories": { "en": "English advisory", "hi": "हिंदी में सलाह" }
 }`;
-
             let contents = [prompt];
             if (imagePath && fs.existsSync(imagePath)) {
-                const imageBuffer = fs.readFileSync(imagePath);
                 contents.push({
                     inlineData: {
                         mimeType: 'image/jpeg',
-                        data: imageBuffer.toString('base64')
+                        data: fs.readFileSync(imagePath).toString('base64')
                     }
                 });
             }
 
-            const response = await ai.models.generateContent({
-                model: 'gemini-1.5-flash',
-                contents: contents
-            });
-            const text = response.text.replace(/```json|```/g, '').trim();
-            return JSON.parse(text);
+            const response = await ai.models.generateContent({ model: 'gemini-1.5-flash', contents });
+            return JSON.parse(response.text.replace(/```json|```/g, '').trim());
         } catch (err) {
-            console.warn('Gemini AI fallback triggered:', err.message);
+            console.warn('Gemini fallback applied:', err.message);
         }
     }
 
     const symptoms = (report.symptoms || []).map(s => s.toLowerCase());
-    const notes = (report.notes || '').toLowerCase();
     let suspectedProblem = 'Undifferentiated Bovine Sickness';
     let severity = 'MODERATE';
+    let confidenceScore = 86;
     let isZoonotic = false;
-    let confidenceScore = 84;
-    let visualFindings = 'Erythema and clinical presentation match reported symptoms.';
-    let tempSolution = 'Isolate the animal immediately, provide clean drinking water with electrolytes, and administer antipyretics.';
+    let visualFindings = 'Clinical presentation corresponds to reported symptoms.';
+    let tempSolution = 'Isolate animal and provide clean drinking water with electrolytes.';
     let aftercare = 'Maintain stall hygiene, apply disinfectant wash daily, and quarantine herd for 14 days.';
     let sampleProtocol = 'Sterile nasal/blood swab dispatched under cold chain (4°C).';
 
-    if (symptoms.includes('blisters') || symptoms.includes('salivation') || notes.includes('mouth') || notes.includes('hoof')) {
+    if (symptoms.includes('blisters') || symptoms.includes('salivation')) {
         suspectedProblem = 'FMD Suspected';
         severity = 'HIGH';
-        confidenceScore = 93;
-        visualFindings = 'Vesicular lesions on oral mucosa and interdigital spaces with excess salivation.';
-        tempSolution = 'Apply 1:1000 potassium permanganate wash on mouth lesions and 4% sodium carbonate footbath.';
-        aftercare = 'Soft green fodder, strict isolate from non-infected herd, prohibit animal movement.';
+        confidenceScore = 94;
+        visualFindings = 'Vesicular lesions on oral mucosa and interdigital spaces.';
+        tempSolution = 'Apply 1:1000 potassium permanganate wash on lesions; 4% sodium carbonate footbath.';
+        aftercare = 'Soft green fodder, restrict cattle movement.';
         sampleProtocol = 'Vesicular epithelium flap in phosphate-buffered glycerol.';
-    } else if (symptoms.includes('skin_nodules') || notes.includes('lump') || notes.includes('nodule')) {
+    } else if (symptoms.includes('skin_nodules')) {
         suspectedProblem = 'Lumpy Skin Disease (LSD)';
         severity = 'HIGH';
         confidenceScore = 91;
         visualFindings = 'Well-demarcated circular nodules throughout the dermal layers.';
-        tempSolution = 'Topical application of neem oil and turmeric paste; paracetamol for fever reduction.';
-        aftercare = 'Vector control using permethrin sprays; isolate cattle under insect nets.';
+        tempSolution = 'Topical application of neem oil and turmeric paste.';
+        aftercare = 'Vector control using permethrin sprays; isolate cattle.';
         sampleProtocol = 'Skin scab biopsy in sterile physiological saline.';
     } else if (symptoms.includes('sudden_death') || symptoms.includes('bloody_discharge')) {
         suspectedProblem = 'Anthrax / Hemorrhagic Septicemia (HS)';
         severity = 'CRITICAL';
         isZoonotic = true;
-        confidenceScore = 96;
-        visualFindings = 'Unclotted dark blood discharge from orifices and acute prostration.';
-        tempSolution = 'Strict quarantine! DO NOT open or drag carcass. Cover carcass in formalin.';
-        aftercare = 'Deep burial (6 feet minimum) with quicklime. Disinfect sheds with 5% sodium hydroxide.';
+        confidenceScore = 97;
+        visualFindings = 'Dark unclotted blood discharge from natural orifices.';
+        tempSolution = 'Strict quarantine! DO NOT open carcass. Cover in formalin.';
+        aftercare = 'Deep burial (6 feet minimum) with quicklime.';
         sampleProtocol = 'Peripheral ear vein blood smear by paravet in full PPE.';
     }
 
     return {
-        identifiedSpecies: report.species || 'Cattle',
+        identifiedSpecies: report.species,
         visualFindings,
         suspectedProblem,
         confidenceScore,
@@ -293,15 +295,15 @@ Return STRICTLY a JSON object with this exact schema:
         aftercareProcedure: aftercare,
         sampleProtocol,
         advisories: {
-            en: `High Risk Advisory for ${report.village}: Suspected ${suspectedProblem}. Immediate isolation recommended.`,
-            hi: `चेतावनी (${report.village}): संभावित रोग - ${suspectedProblem}। तुरंत पशु को अलग रखें।`
+            en: `Advisory for ${report.village}: Suspected ${suspectedProblem}. Immediate isolation recommended.`,
+            hi: `चेतावनी (${report.village}): संभावित रोग - ${suspectedProblem}। पशु को तुरंत अलग रखें।`
         }
     };
 }
 
-// --- API ROUTES ---
+// --- API ENDPOINTS ---
 
-// 1. Submit Case Report
+// 1. Submit Sickness Report & Trigger Automatic SMS for High-Risk Cases
 app.post('/api/reports', upload.single('cattleImage'), async (req, res) => {
     try {
         const { reporterName, reporterPhone, fullAddress, village, district, species, animalTag, animalAge, symptoms, notes, affectedCount, mortalityCount, latitude, longitude } = req.body;
@@ -312,13 +314,9 @@ app.post('/api/reports', upload.single('cattleImage'), async (req, res) => {
 
         const [aiReport, nearestVet] = await Promise.all([
             analyzeWithGoogleAI({
-                species,
-                symptoms: parsedSymptoms,
-                notes,
-                affectedCount: Number(affectedCount) || 1,
-                mortalityCount: Number(mortalityCount) || 0,
-                village: village || fullAddress,
-                district
+                species, symptoms: parsedSymptoms, notes,
+                affectedCount: Number(affectedCount) || 1, mortalityCount: Number(mortalityCount) || 0,
+                village: village || fullAddress, district
             }, imagePath),
             fetchRealNearestVet(lat, lng, village, district)
         ]);
@@ -337,66 +335,56 @@ app.post('/api/reports', upload.single('cattleImage'), async (req, res) => {
         `);
 
         insertReport.run(
-            reportId, timestamp, reporterName || 'Ramesh Kumar', reporterPhone || '+91 98765 43210',
-            fullAddress || `${village}, ${district}`, village || 'Rampur Village', district || 'Ghaziabad',
-            species || 'Cattle', animalTag || 'IND-2024-7856', animalAge || '4 Years', notes || '', imageUrl, JSON.stringify(parsedSymptoms),
+            reportId, timestamp, reporterName || 'Farmer', reporterPhone || '+91 98765 43210',
+            fullAddress || `${village}, ${district}`, village || 'Local Area', district || 'Ghaziabad',
+            species || 'Cattle (Cow)', animalTag || 'IND-UNTAGGED', animalAge || '4 Years', notes || '', imageUrl, JSON.stringify(parsedSymptoms),
             Number(affectedCount) || 1, Number(mortalityCount) || 0, lat, lng,
             JSON.stringify(nearestVet), JSON.stringify(aiReport)
         );
 
         if (aiReport.severity === 'CRITICAL' || aiReport.severity === 'HIGH') {
-            const insertAlert = db.prepare(`
+            db.prepare(`
                 INSERT INTO alerts (alertId, reportId, location, disease, severity, isZoonotic, advisories, timestamp, status)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `);
-            insertAlert.run(
-                'ALT-' + Date.now(), reportId, fullAddress || `${village}, ${district}`,
-                aiReport.suspectedProblem, aiReport.severity, aiReport.isZoonotic ? 1 : 0,
-                JSON.stringify(aiReport.advisories), timestamp, 'ACTIVE'
-            );
+            `).run('ALT-' + Date.now(), reportId, fullAddress || `${village}, ${district}`, aiReport.suspectedProblem, aiReport.severity, aiReport.isZoonotic ? 1 : 0, JSON.stringify(aiReport.advisories), timestamp, 'ACTIVE');
+
+            // Trigger Automatic SMS Alert to Farmer & Local Emergency Network
+            if (reporterPhone && reporterPhone !== 'N/A') {
+                const smsText = `🚨 PASHURAKSHAK ALERT: Suspected ${aiReport.suspectedProblem} reported for Tag ${animalTag || 'IND'} in ${village}. Isolate animal immediately. Helpline: 1962.`;
+                sendSMSAlert(reporterPhone, smsText);
+            }
         }
 
         if (animalTag && animalTag !== 'IND-UNTAGGED') {
-            const insertHerd = db.prepare(`
+            db.prepare(`
                 INSERT INTO herds (tag, species, owner, village, date, problem, symptoms, notes, imageUrl)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `);
-            insertHerd.run(
-                (animalTag || 'IND-2024-7856').toUpperCase(), species, reporterName || 'Farmer', village || 'Local',
-                timestamp, aiReport.suspectedProblem, JSON.stringify(parsedSymptoms),
-                notes || '', imageUrl
-            );
+            `).run(animalTag.toUpperCase(), species, reporterName || 'Farmer', village || 'Local', timestamp, aiReport.suspectedProblem, JSON.stringify(parsedSymptoms), notes || '', imageUrl);
         }
 
         const fullReport = {
-            id: reportId,
-            timestamp,
-            reporterName: reporterName || 'Ramesh Kumar',
-            reporterPhone: reporterPhone || '+91 98765 43210',
-            fullAddress: fullAddress || `${village}, ${district}`,
-            village: village || 'Rampur Village',
-            district: district || 'Ghaziabad',
-            species: species || 'Cattle',
-            animalTag: animalTag || 'IND-2024-7856',
-            animalAge: animalAge || '4 Years',
-            notes: notes || '',
-            imageUrl,
-            symptoms: parsedSymptoms,
-            affectedCount: Number(affectedCount) || 1,
-            mortalityCount: Number(mortalityCount) || 0,
-            latitude: lat,
-            longitude: lng,
-            nearestVet,
-            aiReport
+            id: reportId, timestamp, reporterName: reporterName || 'Farmer', reporterPhone: reporterPhone || '+91 98765 43210',
+            fullAddress: fullAddress || `${village}, ${district}`, village: village || 'Local Area', district: district || 'Ghaziabad',
+            species: species || 'Cattle (Cow)', animalTag: animalTag || 'IND-UNTAGGED', animalAge: animalAge || '4 Years',
+            notes: notes || '', imageUrl, symptoms: parsedSymptoms, affectedCount: Number(affectedCount) || 1,
+            mortalityCount: Number(mortalityCount) || 0, latitude: lat, longitude: lng, nearestVet, aiReport
         };
 
-        res.status(201).json({ message: 'Case registered successfully', report: fullReport });
+        res.status(201).json({ message: 'Case created', report: fullReport });
     } catch (err) {
-        res.status(500).json({ error: 'Database transaction error: ' + err.message });
+        res.status(500).json({ error: err.message });
     }
 });
 
-// 2. Fetch Reports
+// 2. Direct Manual SMS Dispatch API
+app.post('/api/alerts/send-sms', async (req, res) => {
+    const { phoneNumber, message, location, disease } = req.body;
+    const bodyText = message || `⚠️ PASHURAKSHAK OUTBREAK ALERT: Suspected ${disease || 'infection'} detected near ${location || 'your area'}. Quarantine livestock & dial 1962.`;
+    const result = await sendSMSAlert(phoneNumber, bodyText);
+    res.json({ message: 'SMS dispatch initiated', result });
+});
+
+// 3. Fetch Reports
 app.get('/api/reports', (req, res) => {
     const rows = db.prepare('SELECT * FROM reports ORDER BY timestamp DESC').all();
     const reports = rows.map(r => ({
@@ -408,7 +396,7 @@ app.get('/api/reports', (req, res) => {
     res.json(reports);
 });
 
-// 3. Fetch Alerts
+// 4. Fetch Alerts
 app.get('/api/alerts', (req, res) => {
     const rows = db.prepare('SELECT * FROM alerts WHERE status = "ACTIVE" ORDER BY timestamp DESC').all();
     const alerts = rows.map(a => ({
@@ -419,7 +407,7 @@ app.get('/api/alerts', (req, res) => {
     res.json(alerts);
 });
 
-// 4. Hotspots Calculation
+// 5. Hotspots
 app.get('/api/hotspots', (req, res) => {
     const rows = db.prepare(`
         SELECT 
@@ -436,11 +424,67 @@ app.get('/api/hotspots', (req, res) => {
         ORDER BY affectedAnimals DESC
     `).all();
 
-    const mostAffected = rows.length > 0 ? rows[0] : null;
-    res.json({ mostAffected, allHotspots: rows });
+    res.json({ mostAffected: rows.length > 0 ? rows[0] : null, allHotspots: rows });
 });
 
-// 5. Case Quick Actions
+// 6. Analytics & Disease Distribution
+app.get('/api/analytics/distribution', (req, res) => {
+    try {
+        const reports = db.prepare('SELECT aiReport FROM reports').all();
+        const counts = { FMD: 0, HS: 0, BQ: 0, LSD: 0, PPR: 0, Brucella: 0, Other: 0 };
+
+        reports.forEach(r => {
+            const parsed = JSON.parse(r.aiReport || '{}');
+            const prob = (parsed.suspectedProblem || '').toUpperCase();
+            if (prob.includes('FOOT') || prob.includes('FMD')) counts.FMD++;
+            else if (prob.includes('HEMORRHAGIC') || prob.includes('HS')) counts.HS++;
+            else if (prob.includes('BLACKQUARTER') || prob.includes('BQ')) counts.BQ++;
+            else if (prob.includes('LUMPY') || prob.includes('LSD')) counts.LSD++;
+            else if (prob.includes('PESTE') || prob.includes('PPR')) counts.PPR++;
+            else if (prob.includes('BRUCELLA')) counts.Brucella++;
+            else counts.Other++;
+        });
+
+        res.json(counts);
+    } catch (e) {
+        res.json({ FMD: 0, HS: 0, BQ: 0, LSD: 0, PPR: 0, Brucella: 0, Other: 0 });
+    }
+});
+
+// 7. Live Summary Metrics
+app.get('/api/summary', (req, res) => {
+    const repSummary = db.prepare(`
+        SELECT 
+            COUNT(*) as totalReports,
+            COALESCE(SUM(affectedCount), 0) as totalAffected,
+            COALESCE(SUM(mortalityCount), 0) as totalMortality
+        FROM reports
+    `).get();
+
+    const resolved = db.prepare(`
+        SELECT COUNT(*) as count FROM reports WHERE aiReport LIKE '%"caseStatus":"Resolved"%'
+    `).get().count;
+
+    const activeAlerts = db.prepare('SELECT COUNT(*) as count FROM alerts WHERE status = "ACTIVE"').get().count;
+    const pendingLabs = db.prepare('SELECT COUNT(*) as count FROM labs WHERE result = "PENDING"').get().count;
+    const criticalCases = db.prepare('SELECT COUNT(*) as count FROM reports WHERE aiReport LIKE "%CRITICAL%" OR aiReport LIKE "%HIGH%"').get().count;
+
+    const total = repSummary.totalReports;
+    const mortalityRate = total > 0 ? ((repSummary.totalMortality / total) * 100).toFixed(1) + '%' : '0.0%';
+
+    res.json({
+        totalReports: total,
+        totalAffected: repSummary.totalAffected,
+        resolvedCases: resolved,
+        mortalityRate: mortalityRate,
+        totalMortality: repSummary.totalMortality,
+        criticalCases,
+        activeAlerts,
+        pendingLabSamples: pendingLabs
+    });
+});
+
+// 8. Case Actions
 app.post('/api/cases/update-status', (req, res) => {
     const { reportId, status, priority } = req.body;
     try {
@@ -464,7 +508,7 @@ app.post('/api/cases/add-note', (req, res) => {
         const report = db.prepare('SELECT * FROM reports WHERE id = ?').get(reportId);
         if (!report) return res.status(404).json({ error: 'Case not found' });
 
-        const updatedNotes = report.notes ? `${report.notes}\n[${new Date().toLocaleTimeString()} by ${author || 'Dr. Patel'}]: ${noteText}` : noteText;
+        const updatedNotes = report.notes ? `${report.notes}\n[${new Date().toLocaleTimeString()} by ${author || 'Doctor'}]: ${noteText}` : noteText;
         db.prepare('UPDATE reports SET notes = ? WHERE id = ?').run(updatedNotes, reportId);
         res.json({ message: 'Note added', notes: updatedNotes });
     } catch (e) {
@@ -493,39 +537,8 @@ app.post('/api/cases/schedule-visit', (req, res) => {
     }
 });
 
-// 6. Analytics & Disease Distribution (FMD, HS, BQ, ET, PPR, Other)
-app.get('/api/analytics/distribution', (req, res) => {
-    try {
-        const reports = db.prepare('SELECT aiReport FROM reports').all();
-        const counts = { FMD: 0, HS: 0, BQ: 0, ET: 0, PPR: 0, Other: 0 };
-
-        reports.forEach(r => {
-            const parsed = JSON.parse(r.aiReport || '{}');
-            const prob = (parsed.suspectedProblem || '').toUpperCase();
-            if (prob.includes('FOOT') || prob.includes('FMD')) counts.FMD++;
-            else if (prob.includes('HEMORRHAGIC') || prob.includes('HS')) counts.HS++;
-            else if (prob.includes('BLACKQUARTER') || prob.includes('BQ')) counts.BQ++;
-            else if (prob.includes('ENTEROTOXEMIA') || prob.includes('ET')) counts.ET++;
-            else if (prob.includes('PESTE') || prob.includes('PPR')) counts.PPR++;
-            else counts.Other++;
-        });
-
-        // Set baseline demo counts if database is fresh
-        if (Object.values(counts).reduce((a,b)=>a+b,0) === 0) {
-            counts.FMD = 32; counts.HS = 18; counts.BQ = 11; counts.ET = 6; counts.PPR = 4; counts.Other = 2;
-        }
-
-        res.json(counts);
-    } catch (e) {
-        res.json({ FMD: 32, HS: 18, BQ: 11, ET: 6, PPR: 4, Other: 2 });
-    }
-});
-
-// 7. Vaccinations
-app.get('/api/vaccinations', (req, res) => {
-    const rows = db.prepare('SELECT * FROM vaccinations').all();
-    res.json(rows);
-});
+// 9. Vaccinations, Labs & Herds
+app.get('/api/vaccinations', (req, res) => res.json(db.prepare('SELECT * FROM vaccinations').all()));
 
 app.get('/api/vaccinations/:tag', (req, res) => {
     const tag = req.params.tag.toUpperCase();
@@ -533,27 +546,15 @@ app.get('/api/vaccinations/:tag', (req, res) => {
 
     if (rows.length > 0) {
         const first = rows[0];
-        const vaccinations = rows.map(r => ({
-            name: r.vaccineName,
-            status: r.status,
-            date: r.date,
-            nextDue: r.nextDue
-        }));
-        return res.json({
-            tag: first.tag,
-            species: first.species,
-            owner: first.owner,
-            village: first.village,
-            district: first.district,
-            vaccinations
-        });
+        const vaccinations = rows.map(r => ({ name: r.vaccineName, status: r.status, date: r.date, nextDue: r.nextDue }));
+        return res.json({ tag: first.tag, species: first.species, owner: first.owner, village: first.village, district: first.district, vaccinations });
     }
 
     res.json({
         tag: tag,
-        species: "Cattle / Bovine",
-        owner: "Ramesh Kumar",
-        village: "Rampur Village",
+        species: "Cattle (Cow)",
+        owner: "Registered Farmer",
+        village: "Local Block",
         district: "Ghaziabad",
         vaccinations: [
             { name: "FMD (Foot & Mouth Disease)", date: "N/A", status: "UNVACCINATED", nextDue: "OVERDUE (Urgent)" },
@@ -575,12 +576,11 @@ app.post('/api/vaccinations/update', (req, res) => {
         db.prepare(`
             INSERT INTO vaccinations (tag, species, owner, village, district, vaccineName, status, date, nextDue)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).run(upperTag, "Cattle", "Ramesh Kumar", "Rampur Village", "Ghaziabad", vaccineName, "VACCINATED", date || new Date().toISOString().split('T')[0], nextDue || '2027-02-28');
+        `).run(upperTag, "Cattle (Cow)", "Farmer", "Local", "Ghaziabad", vaccineName, "VACCINATED", date || new Date().toISOString().split('T')[0], nextDue || '2027-02-28');
     }
     res.json({ message: 'Vaccination recorded' });
 });
 
-// 8. Labs
 app.post('/api/labs/refer', (req, res) => {
     const { reportId, sampleType, labName, paravetName } = req.body;
     const sampleId = 'SAM-' + Date.now();
@@ -594,10 +594,7 @@ app.post('/api/labs/refer', (req, res) => {
     res.status(201).json({ message: 'Lab referral created', sampleId });
 });
 
-app.get('/api/labs', (req, res) => {
-    const rows = db.prepare('SELECT * FROM labs ORDER BY createdAt DESC').all();
-    res.json(rows);
-});
+app.get('/api/labs', (req, res) => res.json(db.prepare('SELECT * FROM labs ORDER BY createdAt DESC').all()));
 
 app.post('/api/labs/update', (req, res) => {
     const { sampleId, status, result } = req.body;
@@ -606,57 +603,21 @@ app.post('/api/labs/update', (req, res) => {
     res.json({ message: 'Lab record updated' });
 });
 
-// 9. Herds
 app.get('/api/herds/:tag', (req, res) => {
     const tag = req.params.tag.toUpperCase();
     const rows = db.prepare('SELECT * FROM herds WHERE UPPER(tag) = ? ORDER BY date DESC').all(tag);
-
     if (rows.length === 0) return res.status(404).json({ error: 'Tag ID not found' });
 
     const first = rows[0];
     const history = rows.map(r => ({
-        date: r.date,
-        problem: r.problem,
+        date: r.date, problem: r.problem,
         symptoms: JSON.parse(r.symptoms || '[]'),
-        notes: r.notes,
-        imageUrl: r.imageUrl
+        notes: r.notes, imageUrl: r.imageUrl
     }));
 
     res.json({ tag: first.tag, species: first.species, owner: first.owner, village: first.village, history });
 });
 
-// 10. Summary Metrics with percentage changes
-app.get('/api/summary', (req, res) => {
-    const reportsSummary = db.prepare(`
-        SELECT 
-            COUNT(*) as totalReports,
-            COALESCE(SUM(affectedCount), 0) as totalAffected,
-            COALESCE(SUM(mortalityCount), 0) as totalMortality
-        FROM reports
-    `).get();
-
-    const activeAlerts = db.prepare('SELECT COUNT(*) as count FROM alerts WHERE status = "ACTIVE"').get().count;
-    const pendingLabs = db.prepare('SELECT COUNT(*) as count FROM labs WHERE result = "PENDING"').get().count;
-    const criticalCases = db.prepare('SELECT COUNT(*) as count FROM reports WHERE aiReport LIKE "%CRITICAL%" OR aiReport LIKE "%HIGH%"').get().count;
-
-    const total = reportsSummary.totalReports > 0 ? reportsSummary.totalReports : 248;
-    const affected = reportsSummary.totalAffected > 0 ? reportsSummary.totalAffected : 23;
-    const resolved = Math.max(0, total - affected);
-    const deaths = reportsSummary.totalMortality > 0 ? reportsSummary.totalMortality : 6;
-    const mortalityRate = ((deaths / total) * 100).toFixed(1);
-
-    res.json({
-        totalReports: total,
-        totalAffected: affected,
-        resolvedCases: resolved,
-        mortalityRate: `${mortalityRate}%`,
-        totalMortality: deaths,
-        criticalCases,
-        activeAlerts,
-        pendingLabSamples: pendingLabs
-    });
-});
-
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`PashuRakshak AI Surveillance Server listening on port ${PORT}`);
+    console.log(`PashuRakshak AI Surveillance Server running on port ${PORT}`);
 });

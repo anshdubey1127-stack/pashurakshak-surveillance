@@ -4,13 +4,15 @@ let currentCoords = { lat: 28.6692, lng: 77.4538 };
 let autocompleteTimeout;
 let currentActiveCase = null;
 let isMockOffline = false;
+let allReportsCache = [];
 
 document.addEventListener('DOMContentLoaded', () => {
     initEntryMap();
     checkOfflineQueue();
+    loadOfficerProfile();
 });
 
-// --- NAVIGATION & VIEW ROUTING ---
+// --- NAVIGATION & ROUTING ---
 function switchMainTab(tabId, btn) {
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.side-link').forEach(b => b.classList.remove('active'));
@@ -66,12 +68,50 @@ function toggleMockOffline() {
     }
 }
 
-function triggerMockSmsAlert(customMsg) {
-    const toast = document.getElementById('smsToast');
-    const body = document.getElementById('smsToastBody');
-    if (customMsg) body.innerText = customMsg;
-    toast.style.display = 'block';
-    setTimeout(() => { toast.style.display = 'none'; }, 6000);
+// --- SMS ALERTS TRIGGER & BROADCAST DISPATCHER ---
+async function triggerMockSmsAlert(customMsg) {
+    const phone = prompt('Enter 10-digit mobile number to send emergency SMS alert:', '+91 98765 43210');
+    if (!phone) return;
+
+    try {
+        const res = await fetch('/api/alerts/send-sms', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                phoneNumber: phone,
+                message: customMsg || `⚠️ PASHURAKSHAK EMERGENCY: Outbreak risk detected in your village area. Restrict herd movement and call 1962.`
+            })
+        });
+        const data = await res.json();
+        
+        const toast = document.getElementById('smsToast');
+        const body = document.getElementById('smsToastBody');
+        body.innerText = `📡 Alert dispatched to ${phone}. (Status: ${data.result.sid ? 'Delivered via Twilio' : 'Queued/Broadcast Logged'})`;
+        toast.style.display = 'block';
+        setTimeout(() => { toast.style.display = 'none'; }, 6000);
+    } catch (e) {
+        alert('SMS service dispatched locally.');
+    }
+}
+
+// --- SETTINGS PROFILE MANAGEMENT ---
+function saveOfficerProfile() {
+    const name = document.getElementById('settingOfficerName').value;
+    const district = document.getElementById('settingDistrict').value;
+    localStorage.setItem('vetOfficerProfile', JSON.stringify({ name, district }));
+    loadOfficerProfile();
+    alert('Officer credentials updated successfully!');
+}
+
+function loadOfficerProfile() {
+    const saved = JSON.parse(localStorage.getItem('vetOfficerProfile') || '{}');
+    if (saved.name) {
+        const shortName = saved.name.split(' ')[0] + ' ' + (saved.name.split(' ')[1] || '');
+        document.getElementById('navDoctorName').innerText = shortName;
+        document.getElementById('sideDoctorName').innerText = shortName;
+        const inputName = document.getElementById('settingOfficerName');
+        if (inputName) inputName.value = saved.name;
+    }
 }
 
 // --- PIN, MAP & SLIDER CONTROLS ---
@@ -125,7 +165,7 @@ function onSliderChange() {
     reverseGeocode(lat, lng);
 }
 
-// --- ADDRESS AUTOCOMPLETE & GEOCODING ---
+// --- AUTOCOMPLETE & GEOCODING ---
 function handleAddressAutocomplete(query) {
     clearTimeout(autocompleteTimeout);
     const dropdown = document.getElementById('addressSuggestions');
@@ -257,9 +297,12 @@ document.getElementById('reportForm').addEventListener('submit', async (e) => {
             document.getElementById('previewContainer').style.display = 'none';
             document.getElementById('uploadPlaceholder').style.display = 'block';
 
-            // Trigger SMS notification simulation for high risk cases
             if (data.report.aiReport && (data.report.aiReport.severity === 'CRITICAL' || data.report.aiReport.severity === 'HIGH')) {
-                triggerMockSmsAlert(`📡 SMS Alert Dispatched: High risk ${data.report.aiReport.suspectedProblem} reported in ${data.report.village}. Containment advisory sent to local farmers.`);
+                const toast = document.getElementById('smsToast');
+                const body = document.getElementById('smsToastBody');
+                body.innerText = `📡 Outbreak Alert Dispatched: High risk ${data.report.aiReport.suspectedProblem} registered. SMS sent to ${data.report.reporterPhone || 'local farmers'}.`;
+                toast.style.display = 'block';
+                setTimeout(() => { toast.style.display = 'none'; }, 6000);
             }
         } else {
             alert('Submission error: ' + (data.error || 'Unknown error occurred.'));
@@ -303,7 +346,7 @@ function renderDetailedAIReport(report) {
         ` : ''}
 
         <div style="font-size:0.85rem; line-height:1.5;">
-            <p><strong>🐄 Species & Breed:</strong> ${ai.identifiedSpecies || report.species}</p>
+            <p><strong>🐄 Species:</strong> ${ai.identifiedSpecies || report.species}</p>
             <p><strong>🔍 Visual Image Findings:</strong> ${ai.visualFindings || 'Analyzed based on reported clinical signs.'}</p>
             <p style="margin-top:4px;"><strong>⚠️ Primary Diagnosis:</strong> <span style="color:#b91c1c; font-weight:700;">${ai.suspectedProblem || 'Undifferentiated Condition'}</span></p>
             <p><strong>☣️ Zoonotic to Humans:</strong> ${ai.isZoonotic ? '⚠️ YES (Follow strict biosafety)' : 'No direct human transmission'}</p>
@@ -332,15 +375,18 @@ function renderDetailedAIReport(report) {
             </a>
         </div>
 
-        <div style="margin-top:12px;">
-            <button onclick="dispatchLabSample('${report.id}', '${ai.suspectedProblem || 'Suspected Disease'}')" class="btn-submit" style="padding:0.6rem; font-size:0.85rem;">
-                <i class="fa-solid fa-truck-medical"></i> Dispatch Sample to Diagnostic Lab
+        <div style="margin-top:12px; display:flex; gap:8px;">
+            <button onclick="dispatchLabSample('${report.id}', '${ai.suspectedProblem || 'Suspected Disease'}')" class="btn-submit" style="padding:0.6rem; font-size:0.85rem; flex:1;">
+                <i class="fa-solid fa-truck-medical"></i> Dispatch Lab Sample
+            </button>
+            <button onclick="triggerMockSmsAlert('🚨 Critical alert for Case ${report.id}: Suspected ${ai.suspectedProblem}. Immediate quarantine advised.')" class="btn-submit" style="padding:0.6rem; font-size:0.85rem; background:#ea580c; flex:1;">
+                <i class="fa-solid fa-comment-sms"></i> Broadcast SMS
             </button>
         </div>
     `;
 }
 
-// --- SURVEILLANCE MAP & EPICENTER ---
+// --- SURVEILLANCE MAP & DASHBOARD ---
 function initSurveillanceMap() {
     if (!survMap) {
         survMap = L.map('map').setView([28.6692, 77.4538], 8);
@@ -364,8 +410,8 @@ async function loadEpicenterAndHotspots() {
             const textEl = document.getElementById('epicenterText');
             const subEl = document.getElementById('epicenterSub');
             
-            if (textEl) textEl.innerHTML = `<strong>${data.mostAffected.locationName} (${data.mostAffected.district})</strong> is currently experiencing the highest livestock disease load.`;
-            if (subEl) subEl.innerHTML = `📍 <strong>Full Address:</strong> ${data.mostAffected.fullAddress || data.mostAffected.locationName} | <strong>Total Sickness Load:</strong> ${data.mostAffected.affectedAnimals} Animals Affected (${data.mostAffected.deaths} Deaths)`;
+            if (textEl) textEl.innerHTML = `<strong>${data.mostAffected.locationName} (${data.mostAffected.district})</strong> has the highest recorded caseload.`;
+            if (subEl) subEl.innerHTML = `📍 <strong>Location:</strong> ${data.mostAffected.fullAddress || data.mostAffected.locationName} | <strong>Live Caseload:</strong> ${data.mostAffected.affectedAnimals} Affected (${data.mostAffected.deaths} Deaths)`;
 
             const epicenterCircle = L.circle([data.mostAffected.latitude, data.mostAffected.longitude], {
                 radius: 3500,
@@ -398,12 +444,13 @@ async function loadDashboardData() {
         document.getElementById('mAffected').innerText = summary.totalAffected;
         document.getElementById('mResolved').innerText = summary.resolvedCases;
         document.getElementById('mMortalityRate').innerText = summary.mortalityRate;
+        document.getElementById('mMortalityCountSub').innerText = `${summary.totalMortality} Total Mortalities`;
 
         const repRes = await fetch('/api/reports');
-        const reports = await repRes.json();
+        allReportsCache = await repRes.json();
         if (survMarkersLayer) survMarkersLayer.clearLayers();
 
-        reports.forEach(r => {
+        allReportsCache.forEach(r => {
             const ai = r.aiReport || {};
             const vet = r.nearestVet || {};
             const sev = ai.severity || 'LOW';
@@ -423,7 +470,6 @@ async function loadDashboardData() {
                 <b>Address:</b> ${r.fullAddress || r.village}<br>
                 <b>Diagnosis:</b> ${ai.suspectedProblem || 'General'}<br>
                 <b>Assigned Vet:</b> ${vet.name || 'Local Hospital'}<br>
-                <b>Vet Phone:</b> ${vet.phone || 'N/A'}<br>
                 <b>Affected:</b> ${r.affectedCount} | <b>Deaths:</b> ${r.mortalityCount}<br>
                 <small>${new Date(r.timestamp).toLocaleString()}</small>
             `);
@@ -450,7 +496,6 @@ async function loadDashboardData() {
     }
 }
 
-// --- CASE MANAGEMENT DASHBOARD & PANEL 3 MODAL ---
 async function loadCaseManagementDashboard() {
     try {
         const [repRes, distRes] = await Promise.all([
@@ -460,10 +505,9 @@ async function loadCaseManagementDashboard() {
         const reports = await repRes.json();
         const dist = await distRes.json();
 
-        // 1. Render Disease Bar Graph (FMD, HS, BQ, ET, PPR, Other)
         const chartWrap = document.getElementById('chartBars');
         if (chartWrap) {
-            const maxVal = Math.max(...Object.values(dist), 10);
+            const maxVal = Math.max(...Object.values(dist), 1);
             chartWrap.innerHTML = Object.entries(dist).map(([disease, count]) => `
                 <div class="chart-bar-item">
                     <span style="font-size:0.75rem; font-weight:700;">${count}</span>
@@ -473,28 +517,46 @@ async function loadCaseManagementDashboard() {
             `).join('');
         }
 
-        // 2. Render Recent Cases List
-        const listWrap = document.getElementById('recentCasesList');
-        if (listWrap) {
-            if (reports.length === 0) {
-                listWrap.innerHTML = '<p class="empty-text">No active reports filed.</p>';
-            } else {
-                listWrap.innerHTML = reports.slice(0, 5).map(r => `
-                    <div class="recent-case-row" onclick="openCaseDetails('${r.id}')">
-                        <div>
-                            <strong>${r.id}</strong> - <span style="color:#059669; font-weight:700;">${r.aiReport ? r.aiReport.suspectedProblem : r.species}</span>
-                            <div style="font-size:0.75rem; color:#64748b;">📍 ${r.village}, ${r.district}</div>
-                        </div>
-                        <span class="priority-pill ${r.aiReport ? r.aiReport.severity : 'LOW'}">${r.aiReport ? r.aiReport.severity : 'LOW'}</span>
-                    </div>
-                `).join('');
-            }
-        }
+        renderRecentCases(reports);
     } catch (e) {
         console.warn('Case dashboard load error:', e);
     }
 }
 
+function renderRecentCases(reports) {
+    const listWrap = document.getElementById('recentCasesList');
+    if (listWrap) {
+        if (reports.length === 0) {
+            listWrap.innerHTML = '<p class="empty-text">No active reports filed.</p>';
+        } else {
+            listWrap.innerHTML = reports.slice(0, 5).map(r => `
+                <div class="recent-case-row" onclick="openCaseDetails('${r.id}')">
+                    <div>
+                        <strong>${r.id}</strong> - <span style="color:#059669; font-weight:700;">${r.aiReport ? r.aiReport.suspectedProblem : r.species}</span>
+                        <div style="font-size:0.75rem; color:#64748b;">📍 ${r.village}, ${r.district}</div>
+                    </div>
+                    <span class="priority-pill ${r.aiReport ? r.aiReport.severity : 'LOW'}">${r.aiReport ? r.aiReport.severity : 'LOW'}</span>
+                </div>
+            `).join('');
+        }
+    }
+}
+
+function filterDashboardCases(query) {
+    if (!query) {
+        renderRecentCases(allReportsCache);
+        return;
+    }
+    const filtered = allReportsCache.filter(r => 
+        (r.id || '').toLowerCase().includes(query.toLowerCase()) ||
+        (r.animalTag || '').toLowerCase().includes(query.toLowerCase()) ||
+        (r.village || '').toLowerCase().includes(query.toLowerCase()) ||
+        (r.species || '').toLowerCase().includes(query.toLowerCase())
+    );
+    renderRecentCases(filtered);
+}
+
+// --- CASE DETAILS MODAL & QUICK ACTIONS ---
 async function openCaseDetails(reportId) {
     const res = await fetch('/api/reports');
     const reports = await res.json();
@@ -506,9 +568,9 @@ async function openCaseDetails(reportId) {
     const vet = r.nearestVet || {};
 
     document.getElementById('modalCaseId').innerText = r.id;
-    document.getElementById('modalCaseStatusBadge').innerText = ai.caseStatus || 'ACTIVE UNDER INVESTIGATION';
-    document.getElementById('modalTag').innerText = r.animalTag || 'IND-2024-7856';
-    document.getElementById('modalSpecies').innerText = r.species || 'Cattle';
+    document.getElementById('modalCaseStatusBadge').innerText = (ai.caseStatus || 'UNDER INVESTIGATION').toUpperCase();
+    document.getElementById('modalTag').innerText = r.animalTag || 'IND-UNTAGGED';
+    document.getElementById('modalSpecies').innerText = r.species || 'Cattle (Cow)';
     document.getElementById('modalAge').innerText = r.animalAge || '4 Years';
     document.getElementById('modalLocation').innerText = `${r.village}, ${r.district}`;
     document.getElementById('modalOwner').innerText = r.reporterName || 'Ramesh Kumar';
@@ -518,7 +580,7 @@ async function openCaseDetails(reportId) {
     prioEl.innerText = ai.severity || 'HIGH';
     prioEl.className = `priority-pill ${ai.severity || 'HIGH'}`;
 
-    document.getElementById('modalDiagnosis').innerText = ai.suspectedProblem || 'FMD Suspected';
+    document.getElementById('modalDiagnosis').innerText = ai.suspectedProblem || 'Clinical Examination Needed';
     document.getElementById('modalConfidence').innerText = `${ai.confidenceScore || 94}% AI Confidence`;
     document.getElementById('modalSymptomsList').innerHTML = (r.symptoms || []).map(s => `<span class="vax-badge">${s}</span>`).join(' ');
     document.getElementById('modalNotes').innerText = r.notes || 'No supplementary farmer notes recorded.';
@@ -555,7 +617,7 @@ async function triggerScheduleVisit() {
 
 async function triggerUpdateStatus() {
     if (!currentActiveCase) return;
-    const status = prompt('Update Case Status (e.g. Under Investigation, In Treatment, Resolved):', 'In Treatment');
+    const status = prompt('Update Case Status (e.g. Under Investigation, In Treatment, Resolved):', 'Resolved');
     if (!status) return;
 
     await fetch('/api/cases/update-status', {
@@ -565,6 +627,7 @@ async function triggerUpdateStatus() {
     });
     alert('Case status updated!');
     openCaseDetails(currentActiveCase.id);
+    loadDashboardData();
 }
 
 async function triggerAddNote() {
@@ -606,7 +669,7 @@ function triggerGenerateReport() {
             </div>
             <table>
                 <tr><th>Species / Breed</th><td>${currentActiveCase.species}</td></tr>
-                <tr><th>Animal Tag / UID</th><td>${currentActiveCase.animalTag || 'IND-2024-7856'}</td></tr>
+                <tr><th>Animal Tag / UID</th><td>${currentActiveCase.animalTag || 'IND-UNTAGGED'}</td></tr>
                 <tr><th>Age & Location</th><td>${currentActiveCase.animalAge || '4 Years'} (${currentActiveCase.village}, ${currentActiveCase.district})</td></tr>
                 <tr><th>Owner Contact</th><td>${currentActiveCase.reporterName} (${currentActiveCase.reporterPhone})</td></tr>
                 <tr><th>Symptoms</th><td>${(currentActiveCase.symptoms || []).join(', ')}</td></tr>
@@ -624,7 +687,7 @@ function triggerGenerateReport() {
     printWindow.document.close();
 }
 
-// --- VACCINATIONS & LAB REFERRALS ---
+// --- VACCINATION & LAB LOOKUP ---
 async function searchVaccinationRecord() {
     const tagInput = document.getElementById('vaxSearchInput');
     const tag = tagInput ? tagInput.value.trim() : '';
