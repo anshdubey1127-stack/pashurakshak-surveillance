@@ -1,0 +1,454 @@
+[
+  {
+    "id": "REP-1787940977933",
+    "timestamp": "2026-08-28T18:16:17.933Z",
+    "reporterName": "Ansh Dubey",
+    "village": "Khalifatpur",
+    "district": "azamgarh",
+    "species": "Buffalo",
+    "symptoms": [
+      "blisters",
+      "respiratory",
+      "sudden_death"
+    ],
+    "affectedCount": 1,
+    "mortalityCount": 0,
+    "latitude": 28.6692,
+    "longitude": 77.4538,
+    "riskLevel": "CRITICAL"
+  },
+  {
+    "id": "REP-1787941044781",
+    "timestamp": "2026-08-28T18:17:24.781Z",
+    "reporterName": "Anonymous Worker",
+    "village": "muradnagar",
+    "district": "ghaziabad",
+    "species": "Goat",
+    "symptoms": [
+      "high_fever",
+      "blisters"
+    ],
+    "affectedCount": 1,
+    "mortalityCount": 1,
+    "latitude": 28.6692,
+    "longitude": 77.4538,
+    "riskLevel": "CRITICAL"
+  },
+  {
+    "id": "REP-1787942089411",
+    "timestamp": "2026-08-28T18:34:49.411Z",
+    "reporterName": "Ansh Dubey",
+    "reporterPhone": "9616958410",
+    "village": "khalifatpur",
+    "block": "Block-1",
+    "district": "azamgarh",
+    "species": "Cattle",
+    "animalTag": "9824",
+    "symptoms": [
+      "high_fever",
+      "bloody_discharge"
+    ],
+    "affectedCount": 1,
+    "mortalityCount": 0,
+    "latitude": 28.627961874666337,
+    "longitude": 77.4556794712335,
+    "triage": {
+      "severity": "CRITICAL",
+      "suspectedDiseases": [
+        "Anthrax / Hemorrhagic Septicemia"
+      ],
+      "isZoonotic": true,
+      "sampleProtocol": "DO NOT OPEN CARCASS. Collect blood smear from ear vein using PPE; dispatch under cold chain.",
+      "recommendations": [
+        "Immediate quarantine of premises. Prohibit carcass opening to prevent spore spread."
+      ],
+      "advisories": {
+        "en": "Urgent Advisory for khalifatpur: Suspected Anthrax / Hemorrhagic Septicemia. Immediate quarantine of premises. Prohibit carcass opening to prevent spore spread.",
+        "hi": "महत्वपूर्ण सूचना (khalifatpur): संभावित रोग - Anthrax / Hemorrhagic Septicemia। तुरंत प्रभावित पशुओं को अलग करें व नजदीकी पशु चिकित्सालय में संपर्क करें।"
+      }
+    }
+  },
+  {
+    "id": "REP-1787943597678",
+    "timestamp": "2026-08-28T18:59:57.678Z",
+    "reporterName": "ansh dubey",
+    "reporterPhone": "9616958410",
+    "fullAddress": "Dadri, Gautam Buddha Nagar, Uttar Pradesh, 201016, India",
+    "village": "Ghaziabad",
+    "district": "Gautam Buddha Nagar",
+    "species": "Cattle",
+    "animalTag": "UNTAGGED",
+    "notes": "a lot of mark on body appears",
+    "imageUrl": "/uploads/cattle_1787943597672.png",
+    "symptoms": [
+      "high_fever",
+      "bloody_discharge"
+    ],
+    "affectedCount": 1,
+    "mortalityCount": 0,
+    "latitude": 28.62581580664344,
+    "longitude": 77.44742899960394,
+    "triage": {
+      "severity": "CRITICAL",
+      "suspectedDiseases": [
+        "Anthrax / Hemorrhagic Septicemia"
+      ],
+      "isZoonotic": true,
+      "sampleProtocol": "DO NOT OPEN CARCASS. Collect peripheral blood smear using full PPE.",
+      "recommendations": [
+        "Immediate herd quarantine. Deep burial of carcass with quicklime."
+      ],
+      "advisories": {
+        "en": "Advisory for Ghaziabad: Suspected Anthrax / Hemorrhagic Septicemia. Immediate herd quarantine. Deep burial of carcass with quicklime.",
+        "hi": "सूचना (Ghaziabad): संभावित रोग - Anthrax / Hemorrhagic Septicemia। तुरंत पशुओं को अलग रखें और नजदीकी पशु चिकित्सालय में संपर्क करें।"
+      }
+    }
+  },
+  {
+    "id": "REP-1787944460278",
+    "timestamp": "2026-08-28T19:14:20.278Z",
+    "reporterName": "abhi",
+    "reporterPhone": "9616958410",
+    "fullAddress": "Dadri, Gautam Buddha Nagar, Uttar Pradesh, 201016, India",
+    "village": "abesit",
+    "district": "Gautam Buddha Nagar",
+    "species": "Cattle",
+    "animalTag": "UNTAGGED",
+    "notes": "no",
+    "imageUrl": "/uploads/cattle_1787944457984.png",
+    "symptoms": [
+      "high_fever",
+      "skin_nodules"
+    ],
+    "affectedCount": 1,
+    "mortalityCount": 0,
+    "latitude": 28.62784185574969,
+    "longitude": 77.45570446302932,
+    "triage": {
+      "severity": "HIGH",
+      "suspectedDiseases": [
+        "Lumpy Skin Disease (LSD)"
+      ],
+      "isZoonotic": false,
+      "sampleProtocol": "Skin nodule biopsy or scab samples in sterile containers.",
+      "recommendations": [
+        "Isolate affected cattle. Fogging & vector control for biting insects."
+      ],
+      "advisories": {
+        "en": "Advisory for abesit: Suspected Lumpy Skin Disease (LSD). Isolate affected cattle. Fogging & vector control for biting insects.",
+        "hi": "सूचना (abesit): संभावित रोग - Lumpy Skin Disease (LSD)। तुरंत पशुओं को अलग रखें और नजदीकी पशु चिकित्सालय में संपर्क करें।"
+      }
+    }
+  },
+  {
+    "id": "REP-1787944565738",
+    "timestamp": "2026-08-28T19:16:05.738Z",
+    "reporterName": "abhi",
+    "reporterPhone": "9616958410",
+    "fullAddress": "Dadri, Gautam Buddha Nagar, Uttar Pradesh, 201016, India",
+    "village": "abes",
+    "district": "Gautam Buddha Nagar",
+    "species": "Cattle",
+    "animalTag": "UNTAGGED",
+    "notes": "no",
+    "imageUrl": "/uploads/cattle_1787944564545.png",
+    "symptoms": [
+      "high_fever",
+      "blisters"
+    ],
+    "affectedCount": 1,
+    "mortalityCount": 0,
+    "latitude": 28.627958802493797,
+    "longitude": 77.45547356278512,
+    "triage": {
+      "severity": "HIGH",
+      "suspectedDiseases": [
+        "Foot-and-Mouth Disease (FMD)"
+      ],
+      "isZoonotic": false,
+      "sampleProtocol": "Vesicular fluid/tissue flap in viral transport medium (VTM).",
+      "recommendations": [
+        "Strict quarantine. Apply 4% sodium carbonate footbaths."
+      ],
+      "advisories": {
+        "en": "Advisory for abes: Suspected Foot-and-Mouth Disease (FMD). Strict quarantine. Apply 4% sodium carbonate footbaths.",
+        "hi": "सूचना (abes): संभावित रोग - Foot-and-Mouth Disease (FMD)। तुरंत पशुओं को अलग रखें और नजदीकी पशु चिकित्सालय में संपर्क करें।"
+      }
+    }
+  },
+  {
+    "id": "REP-1787944855808",
+    "timestamp": "2026-08-28T19:20:55.808Z",
+    "reporterName": "abhi",
+    "reporterPhone": "9616958410",
+    "fullAddress": "Dadri, Gautam Buddha Nagar, Uttar Pradesh, 201016, India",
+    "village": "abesit",
+    "district": "Gautam Buddha Nagar",
+    "species": "Cattle",
+    "animalTag": "UNTAGGED",
+    "notes": "",
+    "imageUrl": "/uploads/cattle_1787944854398.png",
+    "symptoms": [
+      "high_fever"
+    ],
+    "affectedCount": 1,
+    "mortalityCount": 0,
+    "latitude": 28.62777490770151,
+    "longitude": 77.45586204859758,
+    "aiReport": {
+      "identifiedSpecies": "Cattle",
+      "visualFindings": "Erythema and clinical signs corresponding to selected symptoms.",
+      "suspectedProblem": "Undifferentiated Bovine Sickness",
+      "severity": "MODERATE",
+      "isZoonotic": false,
+      "temporarySolution": "Isolate the animal immediately, provide clean drinking water with electrolytes, and administer antipyretics.",
+      "aftercareProcedure": "Maintain stall hygiene, apply disinfectant wash daily, and quarantine herd for 14 days.",
+      "sampleProtocol": "Sterile nasal/blood swab dispatched under cold chain (4°C).",
+      "advisories": {
+        "en": "Advisory for abesit: Suspected Undifferentiated Bovine Sickness. Immediate isolation recommended.",
+        "hi": "सलाह (abesit): संभावित रोग - Undifferentiated Bovine Sickness। तुरंत पशु को अलग बाड़े में रखें और स्वच्छता अपनाएं।"
+      }
+    }
+  },
+  {
+    "id": "REP-1787945255333",
+    "timestamp": "2026-08-28T19:27:35.333Z",
+    "reporterName": "abhishek",
+    "reporterPhone": "9616958410",
+    "fullAddress": "Dadri, Gautam Buddha Nagar, Uttar Pradesh, 201016, Indiaabesi",
+    "village": "abesit",
+    "district": "Gautam Buddha Nagar",
+    "species": "Sheep",
+    "animalTag": "UNTAGGED",
+    "notes": "",
+    "imageUrl": "/uploads/cattle_1787945253631.png",
+    "symptoms": [
+      "high_fever"
+    ],
+    "affectedCount": 1,
+    "mortalityCount": 0,
+    "latitude": 28.627824966661848,
+    "longitude": 77.45570569504642,
+    "aiReport": {
+      "identifiedSpecies": "Sheep",
+      "visualFindings": "Erythema and clinical signs corresponding to selected symptoms.",
+      "suspectedProblem": "Undifferentiated Bovine Sickness",
+      "severity": "MODERATE",
+      "isZoonotic": false,
+      "temporarySolution": "Isolate the animal immediately, provide clean drinking water with electrolytes, and administer antipyretics.",
+      "aftercareProcedure": "Maintain stall hygiene, apply disinfectant wash daily, and quarantine herd for 14 days.",
+      "sampleProtocol": "Sterile nasal/blood swab dispatched under cold chain (4°C).",
+      "advisories": {
+        "en": "Advisory for abesit: Suspected Undifferentiated Bovine Sickness. Immediate isolation recommended.",
+        "hi": "सलाह (abesit): संभावित रोग - Undifferentiated Bovine Sickness। तुरंत पशु को अलग बाड़े में रखें और स्वच्छता अपनाएं।"
+      }
+    }
+  },
+  {
+    "id": "REP-1787945919228",
+    "timestamp": "2026-08-28T19:38:39.228Z",
+    "reporterName": "abhi",
+    "reporterPhone": "97t6623738",
+    "fullAddress": "Dadri, Gautam Buddha Nagar, Uttar Pradesh, 201016, India",
+    "village": "abesit",
+    "district": "Gautam Buddha Nagar",
+    "species": "Cattle",
+    "animalTag": "UNTAGGED",
+    "notes": "chiiti chiiti on body rashes",
+    "imageUrl": "/uploads/cattle_1787945918241.png",
+    "symptoms": [
+      "high_fever"
+    ],
+    "affectedCount": 1,
+    "mortalityCount": 0,
+    "latitude": 28.628019031648627,
+    "longitude": 77.45524660626985,
+    "aiReport": {
+      "identifiedSpecies": "Cattle",
+      "visualFindings": "Erythema and clinical signs corresponding to selected symptoms.",
+      "suspectedProblem": "Undifferentiated Bovine Sickness",
+      "severity": "MODERATE",
+      "isZoonotic": false,
+      "temporarySolution": "Isolate the animal immediately, provide clean drinking water with electrolytes, and administer antipyretics.",
+      "aftercareProcedure": "Maintain stall hygiene, apply disinfectant wash daily, and quarantine herd for 14 days.",
+      "sampleProtocol": "Sterile nasal/blood swab dispatched under cold chain (4°C).",
+      "advisories": {
+        "en": "Advisory for abesit: Suspected Undifferentiated Bovine Sickness. Immediate isolation recommended.",
+        "hi": "सलाह (abesit): संभावित रोग - Undifferentiated Bovine Sickness। तुरंत पशु को अलग बाड़े में रखें और स्वच्छता अपनाएं।"
+      }
+    }
+  },
+  {
+    "id": "REP-1788003099923",
+    "timestamp": "2026-08-29T11:31:39.923Z",
+    "reporterName": "ramesh kumar",
+    "reporterPhone": "9616958410",
+    "fullAddress": "क्रोस्सिंग्स रेपुब्लीक, Ghaziabad, गाजियाबाद, ग़ाज़ियाबाद ज़िला, Uttar Pradesh, 201001, India",
+    "village": "क्रोस्सिंग्स रेपुब्लीक",
+    "district": "ग़ाज़ियाबाद ज़िला",
+    "species": "Cattle",
+    "animalTag": "IN-TAG-9021",
+    "notes": "",
+    "imageUrl": "/uploads/cattle_1788003098379.png",
+    "symptoms": [
+      "high_fever"
+    ],
+    "affectedCount": 1,
+    "mortalityCount": 0,
+    "latitude": 28.630938758329496,
+    "longitude": 77.43952922220731,
+    "nearestVet": {
+      "name": "Dr. Ritu Verma (Veterinary Surgeon)",
+      "phone": "+91-9810987654",
+      "clinic": "District Veterinary Polyclinic Kavi Nagar",
+      "address": "C-Block, Near Shastri Nagar Crossing, Kavi Nagar, Ghaziabad",
+      "latitude": 28.673,
+      "longitude": 77.449,
+      "distanceKm": "4.8"
+    },
+    "aiReport": {
+      "identifiedSpecies": "Cattle",
+      "visualFindings": "Erythema and clinical signs corresponding to selected symptoms.",
+      "suspectedProblem": "Undifferentiated Bovine Sickness",
+      "severity": "MODERATE",
+      "isZoonotic": false,
+      "temporarySolution": "Isolate the animal immediately, provide clean drinking water with electrolytes, and administer antipyretics.",
+      "aftercareProcedure": "Maintain stall hygiene, apply disinfectant wash daily, and quarantine herd for 14 days.",
+      "sampleProtocol": "Sterile nasal/blood swab dispatched under cold chain (4°C).",
+      "advisories": {
+        "en": "Advisory for क्रोस्सिंग्स रेपुब्लीक: Suspected Undifferentiated Bovine Sickness. Immediate isolation recommended.",
+        "hi": "सलाह (क्रोस्सिंग्स रेपुब्लीक): संभावित रोग - Undifferentiated Bovine Sickness। तुरंत पशु को अलग रखें।"
+      }
+    }
+  },
+  {
+    "id": "REP-1788003173918",
+    "timestamp": "2026-08-29T11:32:53.918Z",
+    "reporterName": "ramesh kumar",
+    "reporterPhone": "N/A",
+    "fullAddress": "अलीगढ़, Koil, अलीगढ़ जिला, Uttar Pradesh, 202001, India",
+    "village": "अलीगढ़",
+    "district": "अलीगढ़ जिला",
+    "species": "Cattle",
+    "animalTag": "UNTAGGED",
+    "notes": "",
+    "imageUrl": "/uploads/cattle_1788003167193.png",
+    "symptoms": [
+      "mouth_sores"
+    ],
+    "affectedCount": 1,
+    "mortalityCount": 0,
+    "latitude": 27.907058371121995,
+    "longitude": 78.04667226589963,
+    "nearestVet": {
+      "name": "Dr. Manoj Chaudhary (Block Livestock Officer)",
+      "phone": "+91-9456781230",
+      "clinic": "Govindpuram Pashu Chikitsalaya",
+      "address": "Main Market Road, Near Ansal Plaza, Govindpuram, Ghaziabad",
+      "latitude": 28.6948,
+      "longitude": 77.488,
+      "distanceKm": "103.3"
+    },
+    "aiReport": {
+      "identifiedSpecies": "Cattle",
+      "visualFindings": "Erythema and clinical signs corresponding to selected symptoms.",
+      "suspectedProblem": "Undifferentiated Bovine Sickness",
+      "severity": "MODERATE",
+      "isZoonotic": false,
+      "temporarySolution": "Isolate the animal immediately, provide clean drinking water with electrolytes, and administer antipyretics.",
+      "aftercareProcedure": "Maintain stall hygiene, apply disinfectant wash daily, and quarantine herd for 14 days.",
+      "sampleProtocol": "Sterile nasal/blood swab dispatched under cold chain (4°C).",
+      "advisories": {
+        "en": "Advisory for अलीगढ़: Suspected Undifferentiated Bovine Sickness. Immediate isolation recommended.",
+        "hi": "सलाह (अलीगढ़): संभावित रोग - Undifferentiated Bovine Sickness। तुरंत पशु को अलग रखें।"
+      }
+    }
+  },
+  {
+    "id": "REP-1788003223804",
+    "timestamp": "2026-08-29T11:33:43.804Z",
+    "reporterName": "ramesh kumar",
+    "reporterPhone": "9616958410",
+    "fullAddress": "अलीगढ़, Koil, अलीगढ़ जिला, Uttar Pradesh, 202001, India",
+    "village": "अलीगढ़",
+    "district": "अलीगढ़ जिला",
+    "species": "Cattle",
+    "animalTag": "UNTAGGED",
+    "notes": "",
+    "imageUrl": "/uploads/cattle_1788003221570.png",
+    "symptoms": [
+      "respiratory"
+    ],
+    "affectedCount": 1,
+    "mortalityCount": 0,
+    "latitude": 27.86457444726356,
+    "longitude": 78.05511921816951,
+    "nearestVet": {
+      "name": "Dr. Ritu Verma (Veterinary Surgeon)",
+      "phone": "+91-9810987654",
+      "clinic": "District Veterinary Polyclinic Kavi Nagar",
+      "address": "C-Block, Near Shastri Nagar Crossing, Kavi Nagar, Ghaziabad",
+      "latitude": 28.673,
+      "longitude": 77.449,
+      "distanceKm": "107.7"
+    },
+    "aiReport": {
+      "identifiedSpecies": "Cattle",
+      "visualFindings": "Erythema and clinical signs corresponding to selected symptoms.",
+      "suspectedProblem": "Undifferentiated Bovine Sickness",
+      "severity": "MODERATE",
+      "isZoonotic": false,
+      "temporarySolution": "Isolate the animal immediately, provide clean drinking water with electrolytes, and administer antipyretics.",
+      "aftercareProcedure": "Maintain stall hygiene, apply disinfectant wash daily, and quarantine herd for 14 days.",
+      "sampleProtocol": "Sterile nasal/blood swab dispatched under cold chain (4°C).",
+      "advisories": {
+        "en": "Advisory for अलीगढ़: Suspected Undifferentiated Bovine Sickness. Immediate isolation recommended.",
+        "hi": "सलाह (अलीगढ़): संभावित रोग - Undifferentiated Bovine Sickness। तुरंत पशु को अलग रखें।"
+      }
+    }
+  },
+  {
+    "id": "REP-1788003661073",
+    "timestamp": "2026-08-29T11:41:01.073Z",
+    "reporterName": "ramesh kumar",
+    "reporterPhone": "9616958410",
+    "fullAddress": "Najafgarh, Delhi, South West Delhi, Delhi, 110043, India",
+    "village": "Delhi",
+    "district": "South West Delhi",
+    "species": "Cattle",
+    "animalTag": "UNTAGGED",
+    "notes": "",
+    "imageUrl": "/uploads/cattle_1788003659680.png",
+    "symptoms": [
+      "mouth_sores"
+    ],
+    "affectedCount": 1,
+    "mortalityCount": 0,
+    "latitude": 28.608637026615575,
+    "longitude": 76.97147037010437,
+    "nearestVet": {
+      "isRealMapData": true,
+      "name": "Senior Veterinary Medical Officer",
+      "clinic": "Govt Animal Hospital",
+      "phone": "1962 (National Animal Helpline / Emergency Toll-Free)",
+      "address": "Nearby Map Node at (28.6115, 76.9861), South West Delhi",
+      "latitude": 28.6114827,
+      "longitude": 76.9860653,
+      "distanceKm": "1.5"
+    },
+    "aiReport": {
+      "identifiedSpecies": "Cattle",
+      "visualFindings": "Erythema and clinical signs corresponding to selected symptoms.",
+      "suspectedProblem": "Undifferentiated Bovine Sickness",
+      "severity": "MODERATE",
+      "isZoonotic": false,
+      "temporarySolution": "Isolate the animal immediately, provide clean drinking water with electrolytes, and administer antipyretics.",
+      "aftercareProcedure": "Maintain stall hygiene, apply disinfectant wash daily, and quarantine herd for 14 days.",
+      "sampleProtocol": "Sterile nasal/blood swab dispatched under cold chain (4°C).",
+      "advisories": {
+        "en": "Advisory for Delhi: Suspected Undifferentiated Bovine Sickness. Immediate isolation recommended.",
+        "hi": "सलाह (Delhi): संभावित रोग - Undifferentiated Bovine Sickness। तुरंत पशु को अलग रखें।"
+      }
+    }
+  }
+]

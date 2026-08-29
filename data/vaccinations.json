@@ -1,0 +1,50 @@
+[
+  {
+    "tag": "IN-TAG-9021",
+    "species": "Cattle",
+    "owner": "Ramesh Yadav",
+    "village": "Muradnagar",
+    "district": "Ghaziabad",
+    "vaccinations": [
+      {
+        "name": "FMD (Foot & Mouth Disease)",
+        "date": "2025-11-10",
+        "status": "VACCINATED",
+        "nextDue": "2026-05-10"
+      },
+      {
+        "name": "Lumpy Skin Disease (Goat Pox)",
+        "date": "2025-08-15",
+        "status": "VACCINATED",
+        "nextDue": "2026-08-15"
+      },
+      {
+        "name": "HS / BQ (Blackquarter)",
+        "date": "N/A",
+        "status": "UNVACCINATED",
+        "nextDue": "OVERDUE (Urgent)"
+      }
+    ]
+  },
+  {
+    "tag": "IN-TAG-4412",
+    "species": "Buffalo",
+    "owner": "Suresh Gujjar",
+    "village": "Govindpuram",
+    "district": "Ghaziabad",
+    "vaccinations": [
+      {
+        "name": "FMD (Foot & Mouth Disease)",
+        "date": "N/A",
+        "status": "UNVACCINATED",
+        "nextDue": "IMMEDIATE"
+      },
+      {
+        "name": "Brucellosis (S19)",
+        "date": "N/A",
+        "status": "UNVACCINATED",
+        "nextDue": "OVERDUE"
+      }
+    ]
+  }
+]

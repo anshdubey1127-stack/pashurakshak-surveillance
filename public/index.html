@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PashuRakshak | AI Animal Health & Outbreak Surveillance</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Smooth styling for the language translate dropdown in navbar */
+        .goog-te-gadget-simple {
+            background-color: rgba(255, 255, 255, 0.12) !important;
+            border: 1px solid rgba(255, 255, 255, 0.25) !important;
+            padding: 4px 8px !important;
+            border-radius: 8px !important;
+            font-size: 0.85rem !important;
+            line-height: 1.4 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            cursor: pointer !important;
+        }
+        .goog-te-gadget-simple .goog-te-menu-value span {
+            color: #ffffff !important;
+            font-weight: 600 !important;
+            text-decoration: none !important;
+        }
+        .goog-te-gadget-simple .goog-te-menu-value span:nth-child(3),
+        .goog-te-gadget-simple .goog-te-menu-value span:nth-child(5) {
+            display: none !important;
+        }
+        .goog-te-gadget-icon {
+            display: none !important;
+        }
+        .goog-te-banner-frame.skiptranslate {
+            display: none !important;
+        }
+        body {
+            top: 0px !important;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="navbar">
+        <div class="brand-container">
+            <div class="logo-shield">
+                <i class="fa-solid fa-shield-cat"></i>
+            </div>
+            <div>
+                <h2>PashuRakshak <span class="ai-badge"><i class="fa-solid fa-sparkles"></i> AI Vision Core</span></h2>
+                <p class="tagline">Unified Livestock Outbreak Surveillance & Rapid Containment Platform</p>
+            </div>
+        </div>
+
+        <div class="header-actions">
+            <!-- LANGUAGE TRANSLATOR SELECTOR (ENGLISH, HINDI, MARATHI) -->
+            <div id="google_translate_element" style="display: flex; align-items: center;"></div>
+
+            <div class="status-indicator online" id="offlineIndicator">
+                <span class="status-pulse"></span>
+                <span id="statusText">AI Model Active</span>
+            </div>
+            <nav class="nav-tabs">
+                <button class="tab-btn active" onclick="switchTab('report-tab', this)"><i class="fa-solid fa-file-medical"></i> Sickness Report</button>
+                <button class="tab-btn" onclick="switchTab('dashboard-tab', this)"><i class="fa-solid fa-chart-line"></i> Surveillance Map</button>
+                <button class="tab-btn" onclick="switchTab('vax-tab', this)"><i class="fa-solid fa-syringe"></i> Vaccination Records</button>
+                <button class="tab-btn" onclick="switchTab('lab-tab', this)"><i class="fa-solid fa-flask-vial"></i> Lab Referrals</button>
+                <button class="tab-btn" onclick="switchTab('herd-tab', this)"><i class="fa-solid fa-tags"></i> Tag Lookup</button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- ================= TAB 1: SICKNESS & AI DIAGNOSIS ================= -->
+        <section id="report-tab" class="tab-content active">
+            <div class="panel-grid">
+                <div class="card form-card">
+                    <div class="card-head">
+                        <i class="fa-solid fa-notes-medical icon-accent"></i>
+                        <div>
+                            <h3>Emergency Case Report & AI Diagnosis</h3>
+                            <p class="subtitle">Submit symptoms, photos, and get instant diagnosis + nearest official veterinary doctor.</p>
+                        </div>
+                    </div>
+                    
+                    <form id="reportForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label><i class="fa-solid fa-user"></i> Farmer / Paravet Name</label>
+                                <input type="text" id="reporterName" placeholder="e.g. Ramesh Kumar" required>
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fa-solid fa-phone"></i> Mobile Phone</label>
+                                <input type="tel" id="reporterPhone" placeholder="10-digit mobile number">
+                            </div>
+                        </div>
+
+                        <!-- 3 LOCATION PICKER MODES -->
+                        <div class="location-box-master">
+                            <label class="section-title-label"><i class="fa-solid fa-map-location-dot"></i> Choose Incident Location (3 Flexible Options)</label>
+                            
+                            <div class="form-group autocomplete-wrapper">
+                                <label class="sub-lbl">Option 1: Type Locality / Village / Colony</label>
+                                <div class="search-input-box">
+                                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                                    <input type="text" id="addressSearchInput" placeholder="Start typing village, colony, block name..." autocomplete="off" oninput="handleAddressAutocomplete(this.value)">
+                                    <button type="button" class="btn-detect-gps" onclick="captureGPS()" title="Click to use device GPS">
+                                        <i class="fa-solid fa-location-crosshairs"></i> Option 2: Use GPS
+                                    </button>
+                                </div>
+                                <div id="addressSuggestions" class="suggestions-dropdown"></div>
+                            </div>
+
+                            <div class="slider-location-wrapper">
+                                <label class="sub-lbl">Option 3: Fine-Tune Location using Sliders</label>
+                                <div class="sliders-row">
+                                    <div class="slider-item">
+                                        <div class="slider-header"><span>Latitude:</span> <strong id="latSliderVal">28.6692</strong></div>
+                                        <input type="range" id="latSlider" min="8.0000" max="37.0000" step="0.005" value="28.6692" oninput="onSliderChange()">
+                                    </div>
+                                    <div class="slider-item">
+                                        <div class="slider-header"><span>Longitude:</span> <strong id="lngSliderVal">77.4538</strong></div>
+                                        <input type="range" id="lngSlider" min="68.0000" max="97.0000" step="0.005" value="77.4538" oninput="onSliderChange()">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label><i class="fa-solid fa-map-pin"></i> Resolved Locality *</label>
+                                <input type="text" id="village" placeholder="Locality or Village" required>
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fa-solid fa-city"></i> District / State *</label>
+                                <input type="text" id="district" placeholder="District name" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label><i class="fa-solid fa-cow"></i> Species *</label>
+                                <select id="species" required>
+                                    <option value="">-- Select Species --</option>
+                                    <option value="Cattle">Cattle (Cow)</option>
+                                    <option value="Buffalo">Buffalo</option>
+                                    <option value="Goat">Goat</option>
+                                    <option value="Sheep">Sheep</option>
+                                    <option value="Poultry">Poultry</option>
+                                    <option value="Pig">Pig</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fa-solid fa-tag"></i> Ear Tag / UID (Optional)</label>
+                                <input type="text" id="animalTag" placeholder="e.g. IN-TAG-9021">
+                            </div>
+                        </div>
+
+                        <!-- CATTLE / LESION PHOTO UPLOAD -->
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-camera"></i> Upload Animal / Lesion Photo (For Google AI Vision)</label>
+                            <div class="upload-dropzone" onclick="document.getElementById('cattleImage').click()">
+                                <input type="file" id="cattleImage" accept="image/*" style="display:none;" onchange="previewImage(event)">
+                                <div id="uploadPlaceholder">
+                                    <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+                                    <p>Snap or upload photo of the infected animal or lesion</p>
+                                    <span class="sub-text">AI will inspect the image for visual signs of FMD, Lumpy Skin, etc.</span>
+                                </div>
+                                <div id="previewContainer" style="display:none;">
+                                    <img id="imagePreview" alt="Cattle Preview" />
+                                    <span class="change-img-btn"><i class="fa-solid fa-arrows-rotate"></i> Change Image</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-stethoscope"></i> Check Observed Symptoms *</label>
+                            <div class="checkbox-grid">
+                                <label class="custom-chk"><input type="checkbox" name="symp" value="high_fever"> <span>High Fever</span></label>
+                                <label class="custom-chk"><input type="checkbox" name="symp" value="blisters"> <span>Mouth/Hoof Blisters</span></label>
+                                <label class="custom-chk"><input type="checkbox" name="symp" value="salivation"> <span>Excessive Drooling</span></label>
+                                <label class="custom-chk"><input type="checkbox" name="symp" value="skin_nodules"> <span>Lumpy Skin Nodules</span></label>
+                                <label class="custom-chk"><input type="checkbox" name="symp" value="mouth_sores"> <span>Mouth Ulcers / Diarrhea</span></label>
+                                <label class="custom-chk"><input type="checkbox" name="symp" value="respiratory"> <span>Labored Breathing</span></label>
+                                <label class="custom-chk"><input type="checkbox" name="symp" value="bloody_discharge"> <span>Dark Orifice Bleeding</span></label>
+                                <label class="custom-chk"><input type="checkbox" name="symp" value="sudden_death"> <span>Sudden Death</span></label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-comment-medical"></i> Additional Farmer / Paravet Notes (Detailed Symptoms)</label>
+                            <textarea id="notes" rows="3" placeholder="Describe milk drop, feed refusal, when symptoms started, previous medications given, or herd condition..."></textarea>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Affected Animals Count</label>
+                                <input type="number" id="affectedCount" min="1" value="1" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Mortality (Deaths)</label>
+                                <input type="number" id="mortalityCount" min="0" value="0" required>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-submit" id="submitBtn">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Run AI Diagnosis & Find Nearest Doctor
+                        </button>
+                    </form>
+                </div>
+
+                <!-- SIDE PANEL: MAP & AI REPORT + VET DETAILS -->
+                <div class="side-panel">
+                    <div class="card">
+                        <div class="card-head">
+                            <i class="fa-solid fa-map-pin icon-accent"></i>
+                            <h4>Incident Location & Assigned Clinic</h4>
+                        </div>
+                        <div id="entryMap"></div>
+                        <div class="coord-bar">
+                            <span><strong>Lat:</strong> <span id="displayLat">28.6692</span></span>
+                            <span><strong>Lng:</strong> <span id="displayLng">77.4538</span></span>
+                        </div>
+                    </div>
+
+                    <div id="triageResultBox" class="card triage-box" style="display:none;"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 2: SURVEILLANCE MAP & EPICENTER ================= -->
+        <section id="dashboard-tab" class="tab-content">
+            <!-- MOST AFFECTED EPICENTER BANNER -->
+            <div id="epicenterBanner" class="epicenter-card" style="display:none;">
+                <div class="epicenter-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                <div class="epicenter-details">
+                    <h4>🔥 Most Heavily Affected Outbreak Epicenter</h4>
+                    <p id="epicenterText">Calculating most affected cluster...</p>
+                    <span id="epicenterSub" class="epicenter-sub"></span>
+                </div>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-icon"><i class="fa-solid fa-clipboard-list"></i></div>
+                    <div>
+                        <h4>Total Cases</h4>
+                        <p id="mTotal">0</p>
+                    </div>
+                </div>
+                <div class="metric-card warning">
+                    <div class="metric-icon"><i class="fa-solid fa-head-side-mask"></i></div>
+                    <div>
+                        <h4>Affected Population</h4>
+                        <p id="mAffected">0</p>
+                    </div>
+                </div>
+                <div class="metric-card danger">
+                    <div class="metric-icon"><i class="fa-solid fa-skull"></i></div>
+                    <div>
+                        <h4>Mortalities</h4>
+                        <p id="mMortality">0</p>
+                    </div>
+                </div>
+                <div class="metric-card critical">
+                    <div class="metric-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                    <div>
+                        <h4>High-Risk Clusters</h4>
+                        <p id="mCritical">0</p>
+                    </div>
+                </div>
+                <div class="metric-card lab">
+                    <div class="metric-icon"><i class="fa-solid fa-vials"></i></div>
+                    <div>
+                        <h4>Pending Lab Tests</h4>
+                        <p id="mLab">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-head">
+                    <i class="fa-solid fa-earth-americas icon-accent"></i>
+                    <div style="flex:1;">
+                        <h3>Geospatial Outbreak & Epicenter Surveillance Map</h3>
+                        <p class="subtitle">Live outbreak clusters, heavily affected zones, and assigned vet clinics.</p>
+                    </div>
+                    <div class="legend">
+                        <span><span class="dot crit"></span> Critical/Anthrax</span>
+                        <span><span class="dot high"></span> High Risk/FMD/LSD</span>
+                        <span><span class="dot epicenter-dot"></span> Most Affected Zone</span>
+                    </div>
+                </div>
+                <div id="map"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-head">
+                    <i class="fa-solid fa-bullhorn icon-accent"></i>
+                    <h3>Broadcast Outbreak Advisories & Warnings</h3>
+                </div>
+                <div id="alertsContainer" class="alerts-list">
+                    <p class="empty-text">Loading active advisories...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 3: VACCINATION RECORDS & IMMUNIZATION ================= -->
+        <section id="vax-tab" class="tab-content">
+            <div class="card">
+                <div class="card-head">
+                    <i class="fa-solid fa-syringe icon-accent"></i>
+                    <div>
+                        <h3>Livestock Immunization & Vaccination Registry</h3>
+                        <p class="subtitle">Verify whether an animal is vaccinated or unvaccinated against FMD, LSD, Brucella, and Blackquarter.</p>
+                    </div>
+                </div>
+
+                <div class="search-bar-wrap">
+                    <input type="text" id="vaxSearchInput" placeholder="Enter Animal Ear Tag UID (e.g. IN-TAG-9021 or IN-TAG-4412)">
+                    <button onclick="searchVaccinationRecord()" class="btn-search"><i class="fa-solid fa-magnifying-glass"></i> Check Status</button>
+                </div>
+
+                <div id="vaxResultContainer">
+                    <div class="vax-info-banner">
+                        <i class="fa-solid fa-circle-info"></i>
+                        <span>Enter any animal Ear Tag UID above to see completed vaccines, booster dates, or overdue unvaccinated status.</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 4: DIAGNOSTIC LABS ================= -->
+        <section id="lab-tab" class="tab-content">
+            <div class="card">
+                <div class="card-head">
+                    <i class="fa-solid fa-microscope icon-accent"></i>
+                    <div>
+                        <h3>Animal Disease Diagnostic Lab (ADDL) Network</h3>
+                        <p class="subtitle">Track specimen transit, PCR/ELISA diagnostic validations, and laboratory confirmations.</p>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Sample ID</th>
+                                <th>Report Ref</th>
+                                <th>Specimen Protocol</th>
+                                <th>Destination Lab</th>
+                                <th>Chain Status</th>
+                                <th>Diagnostic Result</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="labTableBody">
+                            <tr><td colspan="7" class="empty-text">No sample referrals logged yet.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 5: HERD / TAG UID LOOKUP ================= -->
+        <section id="herd-tab" class="tab-content">
+            <div class="card">
+                <div class="card-head">
+                    <i class="fa-solid fa-address-card icon-accent"></i>
+                    <div>
+                        <h3>Animal Health Record & Sickness History</h3>
+                        <p class="subtitle">Search complete previous disease reports and clinical history via Tag UID.</p>
+                    </div>
+                </div>
+
+                <div class="search-bar-wrap">
+                    <input type="text" id="tagSearchInput" placeholder="Enter 12-Digit Tag UID (e.g. IN-TAG-9021)">
+                    <button onclick="searchAnimalTag()" class="btn-search"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
+                </div>
+
+                <div id="tagResultContainer"></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- GOOGLE TRANSLATION SCRIPT INITIALIZATION (ENGLISH, HINDI, MARATHI) -->
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'en',
+                includedLanguages: 'en,hi,mr',
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+                autoDisplay: false
+            }, 'google_translate_element');
+        }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

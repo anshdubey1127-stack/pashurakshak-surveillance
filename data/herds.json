@@ -1,0 +1,35 @@
+[
+  {
+    "tag": "9824",
+    "species": "Cattle",
+    "owner": "Ansh Dubey",
+    "village": "khalifatpur",
+    "history": [
+      {
+        "date": "2026-08-28T18:34:49.411Z",
+        "symptoms": [
+          "high_fever",
+          "bloody_discharge"
+        ],
+        "triage": "Anthrax / Hemorrhagic Septicemia"
+      }
+    ]
+  },
+  {
+    "tag": "IN-TAG-9021",
+    "species": "Cattle",
+    "owner": "ramesh kumar",
+    "village": "क्रोस्सिंग्स रेपुब्लीक",
+    "history": [
+      {
+        "date": "2026-08-29T11:31:39.923Z",
+        "symptoms": [
+          "high_fever"
+        ],
+        "notes": "",
+        "problem": "Undifferentiated Bovine Sickness",
+        "imageUrl": "/uploads/cattle_1788003098379.png"
+      }
+    ]
+  }
+]

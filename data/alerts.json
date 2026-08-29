@@ -1,0 +1,74 @@
+[
+  {
+    "alertId": "ALT-1787940977935",
+    "reportId": "REP-1787940977933",
+    "location": "Khalifatpur, azamgarh",
+    "message": "Suspected high-risk outbreak in Buffalo. Immediate field verification advised.",
+    "timestamp": "2026-08-28T18:16:17.933Z",
+    "status": "ACTIVE"
+  },
+  {
+    "alertId": "ALT-1787941044782",
+    "reportId": "REP-1787941044781",
+    "location": "muradnagar, ghaziabad",
+    "message": "Suspected high-risk outbreak in Goat. Immediate field verification advised.",
+    "timestamp": "2026-08-28T18:17:24.781Z",
+    "status": "ACTIVE"
+  },
+  {
+    "alertId": "ALT-1787942089412",
+    "reportId": "REP-1787942089411",
+    "location": "khalifatpur, , azamgarh",
+    "disease": "Anthrax / Hemorrhagic Septicemia",
+    "severity": "CRITICAL",
+    "isZoonotic": true,
+    "advisories": {
+      "en": "Urgent Advisory for khalifatpur: Suspected Anthrax / Hemorrhagic Septicemia. Immediate quarantine of premises. Prohibit carcass opening to prevent spore spread.",
+      "hi": "महत्वपूर्ण सूचना (khalifatpur): संभावित रोग - Anthrax / Hemorrhagic Septicemia। तुरंत प्रभावित पशुओं को अलग करें व नजदीकी पशु चिकित्सालय में संपर्क करें।"
+    },
+    "timestamp": "2026-08-28T18:34:49.411Z",
+    "status": "ACTIVE"
+  },
+  {
+    "alertId": "ALT-1787943597679",
+    "reportId": "REP-1787943597678",
+    "location": "Dadri, Gautam Buddha Nagar, Uttar Pradesh, 201016, India",
+    "disease": "Anthrax / Hemorrhagic Septicemia",
+    "severity": "CRITICAL",
+    "isZoonotic": true,
+    "advisories": {
+      "en": "Advisory for Ghaziabad: Suspected Anthrax / Hemorrhagic Septicemia. Immediate herd quarantine. Deep burial of carcass with quicklime.",
+      "hi": "सूचना (Ghaziabad): संभावित रोग - Anthrax / Hemorrhagic Septicemia। तुरंत पशुओं को अलग रखें और नजदीकी पशु चिकित्सालय में संपर्क करें।"
+    },
+    "timestamp": "2026-08-28T18:59:57.678Z",
+    "status": "ACTIVE"
+  },
+  {
+    "alertId": "ALT-1787944460280",
+    "reportId": "REP-1787944460278",
+    "location": "Dadri, Gautam Buddha Nagar, Uttar Pradesh, 201016, India",
+    "disease": "Lumpy Skin Disease (LSD)",
+    "severity": "HIGH",
+    "isZoonotic": false,
+    "advisories": {
+      "en": "Advisory for abesit: Suspected Lumpy Skin Disease (LSD). Isolate affected cattle. Fogging & vector control for biting insects.",
+      "hi": "सूचना (abesit): संभावित रोग - Lumpy Skin Disease (LSD)। तुरंत पशुओं को अलग रखें और नजदीकी पशु चिकित्सालय में संपर्क करें।"
+    },
+    "timestamp": "2026-08-28T19:14:20.278Z",
+    "status": "ACTIVE"
+  },
+  {
+    "alertId": "ALT-1787944565739",
+    "reportId": "REP-1787944565738",
+    "location": "Dadri, Gautam Buddha Nagar, Uttar Pradesh, 201016, India",
+    "disease": "Foot-and-Mouth Disease (FMD)",
+    "severity": "HIGH",
+    "isZoonotic": false,
+    "advisories": {
+      "en": "Advisory for abes: Suspected Foot-and-Mouth Disease (FMD). Strict quarantine. Apply 4% sodium carbonate footbaths.",
+      "hi": "सूचना (abes): संभावित रोग - Foot-and-Mouth Disease (FMD)। तुरंत पशुओं को अलग रखें और नजदीकी पशु चिकित्सालय में संपर्क करें।"
+    },
+    "timestamp": "2026-08-28T19:16:05.738Z",
+    "status": "ACTIVE"
+  }
+]

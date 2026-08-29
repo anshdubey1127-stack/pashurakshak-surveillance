@@ -1,0 +1,23 @@
+[
+  {
+    "sampleId": "SAM-1787942123446",
+    "reportId": "REP-1787942089411",
+    "sampleType": "Anthrax / Hemorrhagic Septicemia",
+    "labName": "District Animal Diagnostic Center",
+    "paravetName": "Active Paravet",
+    "status": "TESTED",
+    "result": "CONFIRMED",
+    "createdAt": "2026-08-28T18:35:23.446Z",
+    "updatedAt": "2026-08-28T18:35:45.917Z"
+  },
+  {
+    "sampleId": "SAM-1787945981778",
+    "reportId": "REP-1787945919228",
+    "sampleType": "Undifferentiated Bovine Sickness",
+    "labName": "State Animal Disease Diagnostic Laboratory",
+    "paravetName": "Verified Field Officer",
+    "status": "TESTED",
+    "result": "NEGATIVE",
+    "createdAt": "2026-08-28T19:39:41.778Z"
+  }
+]
