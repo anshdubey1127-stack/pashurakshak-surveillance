@@ -37,37 +37,33 @@
         </div>
 
         <div class="header-actions">
-            <!-- LANGUAGE SELECTOR -->
             <div id="google_translate_element" style="display: flex; align-items: center;"></div>
 
-            <!-- OFFLINE STATUS BADGE (DEMO SYNC) -->
             <div class="status-indicator online" id="offlineIndicator" onclick="toggleMockOffline()">
                 <span class="status-pulse"></span>
                 <span id="statusText">Online / AI Active</span>
             </div>
 
-            <!-- USER PROFILE PILL -->
-            <div class="user-profile-pill">
+            <div class="user-profile-pill" onclick="switchMainTab('settings-tab')">
                 <i class="fa-solid fa-user-doctor"></i>
-                <span>Dr. Patel <i class="fa-solid fa-chevron-down" style="font-size:0.7rem;"></i></span>
+                <span id="navDoctorName">Dr. Patel</span> <i class="fa-solid fa-gear" style="font-size:0.75rem; margin-left:4px;"></i>
             </div>
         </div>
     </header>
 
-    <!-- OFFLINE DATA PERSISTENCE BANNER -->
     <div id="offlineBanner" class="offline-sync-banner" style="display:none;">
         <i class="fa-solid fa-wifi-slash"></i>
-        <span><strong>Offline Mode Active:</strong> Reports are safely cached on device. Auto-sync will trigger once connectivity returns.</span>
+        <span><strong>Offline Mode Active:</strong> Data cached locally. Auto-sync will trigger once connectivity returns.</span>
     </div>
 
     <!-- MAIN APP CONTAINER WITH SIDEBAR -->
     <div class="app-layout">
         
-        <!-- SIDEBAR NAVIGATION (FROM PANEL 2) -->
+        <!-- SIDEBAR NAVIGATION -->
         <aside class="sidebar">
             <div class="sidebar-header">
                 <small>PROFESSIONAL PORTAL</small>
-                <h4>Dr. Patel</h4>
+                <h4 id="sideDoctorName">Dr. Patel</h4>
             </div>
             <nav class="sidebar-nav">
                 <button class="side-link active" onclick="switchMainTab('welcome-tab', this)">
@@ -91,8 +87,8 @@
                 <button class="side-link" onclick="triggerMockSmsAlert()">
                     <i class="fa-solid fa-bell"></i> Alerts & Notifications
                 </button>
-                <button class="side-link" onclick="switchMainTab('report-tab', this)">
-                    <i class="fa-solid fa-gear"></i> Settings
+                <button class="side-link" onclick="switchMainTab('settings-tab', this)">
+                    <i class="fa-solid fa-sliders"></i> System Settings
                 </button>
             </nav>
         </aside>
@@ -125,7 +121,6 @@
                         </div>
                     </div>
 
-                    <!-- 4 QUICK ACTION TILES (FROM PANEL 1) -->
                     <h4 class="section-title">Quick Actions</h4>
                     <div class="quick-actions-grid">
                         <div class="qa-card" onclick="switchMainTab('vax-tab')">
@@ -161,35 +156,34 @@
                     </div>
                     <div class="search-box-header">
                         <i class="fa-solid fa-magnifying-glass"></i>
-                        <input type="text" placeholder="Search cases, reports, tags...">
+                        <input type="text" id="dashSearchInput" placeholder="Filter cases by tag or locality..." oninput="filterDashboardCases(this.value)">
                     </div>
                 </div>
 
-                <!-- 4 TOP STAT CARDS WITH PERCENTAGES -->
+                <!-- LIVE METRICS FROM DATABASE -->
                 <div class="stats-row">
                     <div class="stat-card">
                         <span class="stat-label">Total Reports</span>
-                        <h3 id="mTotal">248</h3>
-                        <span class="stat-trend positive"><i class="fa-solid fa-arrow-trend-up"></i> +12% this week</span>
+                        <h3 id="mTotal">0</h3>
+                        <span class="stat-trend neutral"><i class="fa-solid fa-database"></i> Live Database Record</span>
                     </div>
                     <div class="stat-card">
                         <span class="stat-label">Active Cases</span>
-                        <h3 id="mAffected">23</h3>
-                        <span class="stat-trend neutral"><i class="fa-solid fa-circle-exclamation"></i> +5 new cases</span>
+                        <h3 id="mAffected">0</h3>
+                        <span class="stat-trend positive"><i class="fa-solid fa-circle-exclamation"></i> Under Surveillance</span>
                     </div>
                     <div class="stat-card">
                         <span class="stat-label">Resolved Cases</span>
-                        <h3 id="mResolved">189</h3>
-                        <span class="stat-trend positive"><i class="fa-solid fa-check-double"></i> +15 this week</span>
+                        <h3 id="mResolved">0</h3>
+                        <span class="stat-trend positive"><i class="fa-solid fa-check-double"></i> Completed Treatment</span>
                     </div>
                     <div class="stat-card">
                         <span class="stat-label">Mortality Rate</span>
-                        <h3 id="mMortalityRate">2.3%</h3>
-                        <span class="stat-trend negative"><i class="fa-solid fa-arrow-trend-down"></i> -0.5% from last week</span>
+                        <h3 id="mMortalityRate">0.0%</h3>
+                        <span class="stat-trend negative" id="mMortalityCountSub">0 Total Deaths</span>
                     </div>
                 </div>
 
-                <!-- EPICENTER HIGHLIGHT BANNER -->
                 <div id="epicenterBanner" class="epicenter-card" style="display:none; margin-top:1.2rem;">
                     <div class="epicenter-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
                     <div class="epicenter-details">
@@ -199,14 +193,14 @@
                     </div>
                 </div>
 
-                <!-- SPLIT: DISEASE DISTRIBUTION BAR CHART & GEOGRAPHIC RISK MAP -->
+                <!-- SPLIT: DISEASE DISTRIBUTION & GEOGRAPHIC RISK MAP -->
                 <div class="dashboard-split-grid">
                     <div class="card">
                         <div class="card-head">
                             <i class="fa-solid fa-chart-column icon-accent"></i>
                             <div>
-                                <h3>Disease Distribution (This Week)</h3>
-                                <p class="subtitle">Live confirmed case load across FMD, HS, BQ, ET, and PPR</p>
+                                <h3>Disease Distribution (Database Confirmed)</h3>
+                                <p class="subtitle">Live case count categorized across major livestock conditions</p>
                             </div>
                         </div>
                         <div class="chart-bars-wrap" id="chartBars"></div>
@@ -224,18 +218,18 @@
                     </div>
                 </div>
 
-                <!-- SIDE BY SIDE: RECENT REPORTS & RECENT ALERTS (FROM PANEL 2) -->
+                <!-- SPLIT: RECENT REPORTS & RECENT ALERTS -->
                 <div class="dashboard-split-grid" style="margin-top:1.2rem;">
                     <div class="card">
                         <div class="card-head">
                             <i class="fa-solid fa-clock-rotate-left icon-accent"></i>
                             <div>
                                 <h3>Recent Reports</h3>
-                                <p class="subtitle">Click any report to view comprehensive file & quick actions</p>
+                                <p class="subtitle">Click any report to open full case file and action panel</p>
                             </div>
                         </div>
                         <div class="recent-cases-list" id="recentCasesList">
-                            <p class="empty-text">Loading recent cases...</p>
+                            <p class="empty-text">No cases recorded yet.</p>
                         </div>
                     </div>
 
@@ -248,13 +242,13 @@
                             </div>
                         </div>
                         <div id="alertsContainer" class="alerts-list">
-                            <p class="empty-text">Loading active advisories...</p>
+                            <p class="empty-text">No active outbreak alerts.</p>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- ================= SICKNESS REPORTING & AI SUBMISSION ================= -->
+            <!-- ================= SICKNESS REPORTING (10 LIVESTOCK SPECIES) ================= -->
             <section id="report-tab" class="tab-content">
                 <div class="panel-grid">
                     <div class="card form-card">
@@ -320,17 +314,22 @@
                                 </div>
                             </div>
 
+                            <!-- EXPANDED SPECIES SELECTOR (10 NATIONAL LIVESTOCK SPECIES) -->
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label><i class="fa-solid fa-cow"></i> Species *</label>
+                                    <label><i class="fa-solid fa-paw"></i> Livestock Species *</label>
                                     <select id="species" required>
-                                        <option value="">-- Select Species --</option>
-                                        <option value="Cattle">Cattle (Cow)</option>
-                                        <option value="Buffalo">Buffalo</option>
-                                        <option value="Goat">Goat</option>
-                                        <option value="Sheep">Sheep</option>
-                                        <option value="Poultry">Poultry</option>
-                                        <option value="Pig">Pig</option>
+                                        <option value="">-- Select Livestock Species --</option>
+                                        <option value="Cattle (Cow)">Cattle (Cow / Bovine)</option>
+                                        <option value="Buffalo">Buffalo (Bubalus bubalis)</option>
+                                        <option value="Goat">Goat (Capra hircus)</option>
+                                        <option value="Sheep">Sheep (Ovis aries)</option>
+                                        <option value="Swine / Pig">Swine / Pig (Sus scrofa)</option>
+                                        <option value="Poultry / Fowl">Poultry / Chicken / Fowl</option>
+                                        <option value="Equine (Horse / Pony / Mule)">Equine (Horse / Pony / Mule)</option>
+                                        <option value="Camel">Camel (Camelus dromedarius)</option>
+                                        <option value="Yak">Yak (Bos grunniens)</option>
+                                        <option value="Mithun">Mithun (Bos frontalis)</option>
                                     </select>
                                 </div>
                                 <div class="form-group">
@@ -347,7 +346,7 @@
                                     <div id="uploadPlaceholder">
                                         <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
                                         <p>Snap or upload photo of the infected animal or lesion</p>
-                                        <span class="sub-text">AI will inspect the image for visual signs of FMD, Lumpy Skin, etc.</span>
+                                        <span class="sub-text">AI inspects images for lesions, nodules, discharge, or inflammation</span>
                                     </div>
                                     <div id="previewContainer" style="display:none;">
                                         <img id="imagePreview" alt="Cattle Preview" />
@@ -392,7 +391,6 @@
                         </form>
                     </div>
 
-                    <!-- SIDE PANEL: MAP & AI REPORT + VET DETAILS -->
                     <div class="side-panel">
                         <div class="card">
                             <div class="card-head">
@@ -407,6 +405,113 @@
                         </div>
 
                         <div id="triageResultBox" class="card triage-box" style="display:none;"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= DEDICATED SYSTEM & USER ACCOUNT SETTINGS ================= -->
+            <section id="settings-tab" class="tab-content">
+                <div class="card">
+                    <div class="card-head">
+                        <i class="fa-solid fa-user-gear icon-accent"></i>
+                        <div>
+                            <h3>Account & Surveillance Settings</h3>
+                            <p class="subtitle">Manage user account profile, contact credentials, alert radius, and emergency SMS settings</p>
+                        </div>
+                    </div>
+
+                    <div class="settings-grid">
+                        <!-- 1. USER ACCOUNT DETAILS -->
+                        <div class="settings-section">
+                            <h4><i class="fa-solid fa-id-card-clip"></i> User Account & Profile Details</h4>
+                            <div class="form-row" style="margin-top: 12px;">
+                                <div class="form-group">
+                                    <label><i class="fa-solid fa-user"></i> Full Name</label>
+                                    <input type="text" id="settingUserName" value="Dr. Ramesh Patel" placeholder="Enter full name">
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fa-solid fa-phone"></i> Mobile Phone Number</label>
+                                    <input type="tel" id="settingUserPhone" value="+91 98765 43210" placeholder="10-digit mobile number">
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label><i class="fa-solid fa-envelope"></i> Official Email</label>
+                                    <input type="email" id="settingUserEmail" value="dr.patel@dahd.nic.in" placeholder="Official gov/org email">
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fa-solid fa-id-badge"></i> Officer / Employee ID</label>
+                                    <input type="text" id="settingUserId" value="VET-OFFICER-2026-904" placeholder="Govt / Paravet ID">
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label><i class="fa-solid fa-briefcase"></i> Role / Designation</label>
+                                    <select id="settingUserRole">
+                                        <option value="Senior Veterinary Officer" selected>Senior Veterinary Officer (SVO)</option>
+                                        <option value="Field Paravet">Field Paravet / Extension Worker</option>
+                                        <option value="District Surveillance Lead">District Surveillance Lead</option>
+                                        <option value="Diagnostic Lab Pathologist">Diagnostic Lab Pathologist</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label><i class="fa-solid fa-location-dot"></i> Assigned District / Block</label>
+                                    <input type="text" id="settingUserDistrict" value="Ghaziabad (Rampur Block A)" placeholder="Assigned Territory">
+                                </div>
+                            </div>
+
+                            <button type="button" class="btn-submit" onclick="saveUserProfileDetails()" style="padding: 0.65rem 1.2rem; font-size: 0.85rem; width: auto;">
+                                <i class="fa-solid fa-floppy-disk"></i> Save Profile Details
+                            </button>
+                        </div>
+
+                        <!-- 2. SURVEILLANCE & SMS DISPATCH PREFERENCES -->
+                        <div class="settings-section">
+                            <h4><i class="fa-solid fa-tower-broadcast"></i> Outbreak Triggers & Alert Preferences</h4>
+                            
+                            <div class="form-group" style="margin-top: 12px;">
+                                <label>Auto-SMS Containment Broadcast Radius</label>
+                                <select id="settingSmsRadius">
+                                    <option value="5">5 km Radius (Immediate Locality)</option>
+                                    <option value="10" selected>10 km Radius (Recommended Block Level)</option>
+                                    <option value="25">25 km Containment Zone</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>High-Risk Disease Cluster Threshold</label>
+                                <select id="settingClusterThreshold">
+                                    <option value="1">1 Confirmed Critical Case (Anthrax/FMD)</option>
+                                    <option value="3" selected>3 Cases in Same Village (Outbreak Warning)</option>
+                                    <option value="5">5 Active Reports (Red Alert Broadcast)</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Emergency Channels</label>
+                                <div class="checkbox-grid" style="grid-template-columns: 1fr 1fr;">
+                                    <label class="custom-chk"><input type="checkbox" id="chkSms" checked> <span>Farmer SMS Alerts</span></label>
+                                    <label class="custom-chk"><input type="checkbox" id="chkIvr" checked> <span>IVR Voice Calls</span></label>
+                                </div>
+                            </div>
+
+                            <button type="button" class="btn-submit" onclick="alert('Surveillance alert rules updated successfully!')" style="padding: 0.65rem 1.2rem; font-size: 0.85rem; width: auto; background: var(--accent-blue);">
+                                <i class="fa-solid fa-sliders"></i> Update Outbreak Rules
+                            </button>
+                        </div>
+
+                        <!-- 3. OFFLINE STORAGE & DATA CLEARING -->
+                        <div class="settings-section" style="grid-column: 1 / -1;">
+                            <h4><i class="fa-solid fa-database"></i> Offline Cache & Device Persistence</h4>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 6px 0 12px 0;">Manage local storage data sync state for field use in low-network village zones.</p>
+                            
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                <button type="button" class="action-btn" onclick="toggleMockOffline()"><i class="fa-solid fa-wifi-slash"></i> <div><strong>Toggle Offline Mode</strong><small>Simulate field connectivity loss</small></div></button>
+                                <button type="button" class="action-btn" onclick="clearLocalStorageData()"><i class="fa-solid fa-trash-can" style="color:#dc2626;"></i> <div><strong>Clear Cached Data</strong><small>Reset local test reports</small></div></button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -490,7 +595,7 @@
         </main>
     </div>
 
-    <!-- ================= PANEL 3: CASE DETAILS & QUICK ACTIONS MODAL ================= -->
+    <!-- ================= CASE DETAILS & QUICK ACTIONS MODAL ================= -->
     <div id="caseDetailsModal" class="custom-modal" style="display:none;">
         <div class="modal-backdrop" onclick="closeCaseModal()"></div>
         <div class="modal-dialog">
@@ -498,13 +603,12 @@
                 <div>
                     <span class="badge-active" id="modalCaseStatusBadge">ACTIVE</span>
                     <h3 id="modalCaseId">CASE-2026-001247</h3>
-                    <small id="modalCaseTimestamp" style="color:#64748b;">Reported 2 hours ago</small>
+                    <small id="modalCaseTimestamp" style="color:#64748b;">Reported recently</small>
                 </div>
                 <button class="btn-close-modal" onclick="closeCaseModal()"><i class="fa-solid fa-xmark"></i></button>
             </div>
 
             <div class="modal-body-grid">
-                <!-- Left Info Panel -->
                 <div class="case-meta-panel">
                     <div class="meta-row">
                         <div><span class="lbl-dim">Animal ID:</span> <strong id="modalTag">IND-2024-7856</strong></div>
@@ -532,14 +636,13 @@
 
                     <div class="section-divider"></div>
 
-                    <!-- ACTIONS TAKEN STEPPER (FROM PANEL 3) -->
                     <h4><i class="fa-solid fa-list-check"></i> Actions Taken</h4>
                     <div class="timeline-stepper">
                         <div class="step-item completed">
                             <div class="step-icon"><i class="fa-solid fa-check"></i></div>
                             <div class="step-content">
                                 <strong>Sample Collection</strong>
-                                <span class="step-status">Completed (2 hours ago)</span>
+                                <span class="step-status">Completed</span>
                                 <small>Dispatched under cold chain protocol (4°C)</small>
                             </div>
                         </div>
@@ -547,7 +650,7 @@
                             <div class="step-icon"><i class="fa-solid fa-spinner fa-spin"></i></div>
                             <div class="step-content">
                                 <strong>Lab Test Ordered</strong>
-                                <span class="step-status in-progress">In Progress (1 hour ago)</span>
+                                <span class="step-status in-progress">In Progress</span>
                                 <small>State Animal Disease Diagnostic Laboratory</small>
                             </div>
                         </div>
@@ -555,7 +658,7 @@
                             <div class="step-icon"><i class="fa-solid fa-calendar-check"></i></div>
                             <div class="step-content">
                                 <strong>Veterinary Visit</strong>
-                                <span class="step-status" id="stepVisitStatus">Scheduled (Today)</span>
+                                <span class="step-status" id="stepVisitStatus">Scheduled</span>
                                 <small id="stepVisitDetail">Dr. In-Charge</small>
                             </div>
                         </div>
@@ -566,7 +669,6 @@
                     <pre id="modalNotes" class="notes-display-box">No notes attached.</pre>
                 </div>
 
-                <!-- Right Quick Actions Panel (FROM PANEL 3) -->
                 <div class="case-actions-panel">
                     <h4><i class="fa-solid fa-bolt"></i> Quick Actions</h4>
                     
@@ -606,14 +708,13 @@
         </div>
     </div>
 
-    <!-- MOCK SMS SIMULATION POPUP -->
     <div id="smsToast" class="sms-toast-modal" style="display:none;">
         <div class="sms-toast-header">
             <i class="fa-solid fa-tower-broadcast"></i>
             <span>Emergency SMS/IVR Broadcast Triggered</span>
             <button onclick="document.getElementById('smsToast').style.display='none'"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        <p id="smsToastBody">📡 Sent High-Risk FMD containment SMS to 420 registered cattle farmers in Rampur Block.</p>
+        <p id="smsToastBody">📡 Sent High-Risk containment SMS to registered cattle farmers in the sector.</p>
     </div>
 
     <!-- GOOGLE TRANSLATE ENGINE -->

@@ -95,22 +95,50 @@ async function triggerMockSmsAlert(customMsg) {
 }
 
 // --- SETTINGS PROFILE MANAGEMENT ---
-function saveOfficerProfile() {
-    const name = document.getElementById('settingOfficerName').value;
-    const district = document.getElementById('settingDistrict').value;
-    localStorage.setItem('vetOfficerProfile', JSON.stringify({ name, district }));
+function saveUserProfileDetails() {
+    const profile = {
+        name: document.getElementById('settingUserName').value.trim() || 'Dr. Patel',
+        phone: document.getElementById('settingUserPhone').value.trim() || '+91 98765 43210',
+        email: document.getElementById('settingUserEmail').value.trim() || 'dr.patel@dahd.nic.in',
+        id: document.getElementById('settingUserId').value.trim() || 'VET-OFFICER-2026-904',
+        role: document.getElementById('settingUserRole').value,
+        district: document.getElementById('settingUserDistrict').value.trim() || 'Ghaziabad (Rampur Block A)'
+    };
+
+    localStorage.setItem('vetOfficerProfile', JSON.stringify(profile));
     loadOfficerProfile();
-    alert('Officer credentials updated successfully!');
+    alert('User account and contact details saved successfully!');
 }
 
 function loadOfficerProfile() {
     const saved = JSON.parse(localStorage.getItem('vetOfficerProfile') || '{}');
-    if (saved.name) {
-        const shortName = saved.name.split(' ')[0] + ' ' + (saved.name.split(' ')[1] || '');
-        document.getElementById('navDoctorName').innerText = shortName;
-        document.getElementById('sideDoctorName').innerText = shortName;
-        const inputName = document.getElementById('settingOfficerName');
-        if (inputName) inputName.value = saved.name;
+    const name = saved.name || 'Dr. Ramesh Patel';
+    const phone = saved.phone || '+91 98765 43210';
+    const email = saved.email || 'dr.patel@dahd.nic.in';
+    const id = saved.id || 'VET-OFFICER-2026-904';
+    const role = saved.role || 'Senior Veterinary Officer';
+    const district = saved.district || 'Ghaziabad (Rampur Block A)';
+
+    const shortName = name.split(' ')[0] + ' ' + (name.split(' ')[1] || '');
+    const navNameEl = document.getElementById('navDoctorName');
+    const sideNameEl = document.getElementById('sideDoctorName');
+    
+    if (navNameEl) navNameEl.innerText = shortName;
+    if (sideNameEl) sideNameEl.innerText = name;
+
+    if (document.getElementById('settingUserName')) document.getElementById('settingUserName').value = name;
+    if (document.getElementById('settingUserPhone')) document.getElementById('settingUserPhone').value = phone;
+    if (document.getElementById('settingUserEmail')) document.getElementById('settingUserEmail').value = email;
+    if (document.getElementById('settingUserId')) document.getElementById('settingUserId').value = id;
+    if (document.getElementById('settingUserRole')) document.getElementById('settingUserRole').value = role;
+    if (document.getElementById('settingUserDistrict')) document.getElementById('settingUserDistrict').value = district;
+}
+
+function clearLocalStorageData() {
+    if (confirm('Are you sure you want to clear local cache and test reports on this device?')) {
+        localStorage.removeItem('offlineReports');
+        alert('Local device cache cleared successfully.');
+        location.reload();
     }
 }
 

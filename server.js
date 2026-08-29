@@ -5,7 +5,8 @@ const cors = require('cors');
 const multer = require('multer');
 const Database = require('better-sqlite3');
 const { GoogleGenAI } = require('@google/genai');
-const twilio = require('twilio');
+let twilio = null;
+try { twilio = require('twilio'); } catch (e) {}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -99,36 +100,59 @@ db.exec(`
     );
 `);
 
-// --- TWILIO SMS CLIENT INITIALIZATION ---
-const twilioClient = (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN)
+// --- TWILIO INITIALIZATION (FALLBACK) ---
+const twilioClient = (twilio && process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN)
     ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
     : null;
 
+// --- REAL SMS DISPATCHER VIA FAST2SMS & TWILIO ---
 async function sendSMSAlert(toPhone, messageBody) {
     if (!toPhone) return { success: false, reason: 'No phone number provided' };
 
-    let formattedPhone = toPhone.trim().replace(/[^0-9+]/g, '');
-    if (formattedPhone.length === 10) {
-        formattedPhone = '+91' + formattedPhone;
+    // Clean Indian 10-digit phone number
+    const cleanPhone = toPhone.trim().replace(/[^0-9]/g, '').slice(-10);
+    if (cleanPhone.length !== 10) {
+        console.warn(`[SMS SKIPPED] Invalid Indian mobile number format: ${toPhone}`);
+        return { success: false, reason: 'Invalid phone format' };
     }
 
+    // 1. FAST2SMS (Free Real Indian Mobile SMS)
+    const fast2smsKey = process.env.FAST2SMS_API_KEY;
+    if (fast2smsKey) {
+        try {
+            const url = `https://www.fast2sms.com/dev/bulkV2?authorization=${fast2smsKey}&route=q&message=${encodeURIComponent(messageBody)}&language=english&flash=0&numbers=${cleanPhone}`;
+            const res = await fetch(url);
+            const data = await res.json();
+            
+            if (data && data.return) {
+                console.log(`[REAL SMS DELIVERED] Fast2SMS sent successfully to +91-${cleanPhone}`);
+                return { success: true, provider: 'Fast2SMS', details: data };
+            } else {
+                console.warn(`[FAST2SMS ERROR]`, data);
+            }
+        } catch (err) {
+            console.error(`[FAST2SMS NETWORK ERROR]:`, err.message);
+        }
+    }
+
+    // 2. TWILIO FALLBACK (If configured)
     if (twilioClient && process.env.TWILIO_PHONE_NUMBER) {
         try {
             const message = await twilioClient.messages.create({
                 body: messageBody,
                 from: process.env.TWILIO_PHONE_NUMBER,
-                to: formattedPhone
+                to: '+91' + cleanPhone
             });
-            console.log(`[SMS SENT] SID: ${message.sid} to ${formattedPhone}`);
-            return { success: true, sid: message.sid };
+            console.log(`[TWILIO SMS SENT] SID: ${message.sid}`);
+            return { success: true, provider: 'Twilio', sid: message.sid };
         } catch (err) {
-            console.error(`[SMS ERROR] Failed to send to ${formattedPhone}:`, err.message);
-            return { success: false, error: err.message };
+            console.error(`[TWILIO ERROR]:`, err.message);
         }
-    } else {
-        console.log(`[SIMULATED SMS DISPATCH] To: ${formattedPhone} | Message: "${messageBody}"`);
-        return { success: true, mock: true };
     }
+
+    // 3. CONSOLE FALLBACK
+    console.log(`[SIMULATED SMS DISPATCH] To: +91-${cleanPhone} | Message: "${messageBody}"`);
+    return { success: true, mock: true };
 }
 
 const storage = multer.diskStorage({
@@ -301,9 +325,9 @@ Return STRICT JSON:
     };
 }
 
-// --- API ENDPOINTS ---
+// --- API ROUTES ---
 
-// 1. Submit Sickness Report & Trigger Automatic SMS for High-Risk Cases
+// 1. Submit Sickness Report & Trigger Automatic SMS
 app.post('/api/reports', upload.single('cattleImage'), async (req, res) => {
     try {
         const { reporterName, reporterPhone, fullAddress, village, district, species, animalTag, animalAge, symptoms, notes, affectedCount, mortalityCount, latitude, longitude } = req.body;
@@ -348,9 +372,9 @@ app.post('/api/reports', upload.single('cattleImage'), async (req, res) => {
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             `).run('ALT-' + Date.now(), reportId, fullAddress || `${village}, ${district}`, aiReport.suspectedProblem, aiReport.severity, aiReport.isZoonotic ? 1 : 0, JSON.stringify(aiReport.advisories), timestamp, 'ACTIVE');
 
-            // Trigger Automatic SMS Alert to Farmer & Local Emergency Network
+            // Dispatch SMS Alert for High-Risk Incident
             if (reporterPhone && reporterPhone !== 'N/A') {
-                const smsText = `🚨 PASHURAKSHAK ALERT: Suspected ${aiReport.suspectedProblem} reported for Tag ${animalTag || 'IND'} in ${village}. Isolate animal immediately. Helpline: 1962.`;
+                const smsText = `🚨 PASHURAKSHAK ALERT: Suspected ${aiReport.suspectedProblem} detected in ${village}. Isolate animal immediately. Vet Helpline: 1962.`;
                 sendSMSAlert(reporterPhone, smsText);
             }
         }
@@ -376,7 +400,7 @@ app.post('/api/reports', upload.single('cattleImage'), async (req, res) => {
     }
 });
 
-// 2. Direct Manual SMS Dispatch API
+// 2. Direct Manual SMS Dispatch Endpoint
 app.post('/api/alerts/send-sms', async (req, res) => {
     const { phoneNumber, message, location, disease } = req.body;
     const bodyText = message || `⚠️ PASHURAKSHAK OUTBREAK ALERT: Suspected ${disease || 'infection'} detected near ${location || 'your area'}. Quarantine livestock & dial 1962.`;
