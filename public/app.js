@@ -30,6 +30,8 @@ function switchMainTab(tabId, btn) {
         }, 150);
     } else if (tabId === 'lab-tab') {
         loadLabReferrals();
+    } else if (tabId === 'alerts-tab') {
+        loadAlertsTab();
     }
 }
 
@@ -68,9 +70,75 @@ function toggleMockOffline() {
     }
 }
 
+// --- ALERTS & NOTIFICATIONS TAB ---
+async function loadAlertsTab() {
+    const listEl = document.getElementById('alertsStreamFull');
+    if (!listEl) return;
+
+    try {
+        const res = await fetch('/api/alerts');
+        const alerts = await res.json();
+
+        if (!alerts || alerts.length === 0) {
+            listEl.innerHTML = '<p class="empty-text">No active outbreak alerts recorded in database.</p>';
+            return;
+        }
+
+        listEl.innerHTML = alerts.map(a => `
+            <div class="alert-item" style="margin-bottom: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <h5 style="color:#ea580c; font-size: 0.95rem;">⚠️ ${a.disease} (${a.severity || 'HIGH'} RISK)</h5>
+                    <small style="color:#64748b;">${new Date(a.timestamp).toLocaleDateString()}</small>
+                </div>
+                <p style="font-size:0.85rem; margin-top: 4px;"><strong>Location:</strong> ${a.location}</p>
+                <div style="font-size:0.85rem; margin-top: 4px; color:#334155;">
+                    <strong>Official Advisory:</strong> ${a.advisories ? (a.advisories.en || a.advisories.hi || '') : 'Quarantine livestock and monitor symptoms.'}
+                </div>
+            </div>
+        `).join('');
+    } catch (e) {
+        listEl.innerHTML = '<p class="empty-text">Failed to fetch alerts.</p>';
+    }
+}
+
+// --- SMS DISPATCH FORM INSIDE ALERTS TAB ---
+async function handlePortalSmsSubmit(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnPortalSms');
+    const phone = document.getElementById('portalSmsPhone').value.trim();
+    const location = document.getElementById('portalSmsLocation').value.trim();
+    const disease = document.getElementById('portalSmsDisease').value;
+    const message = document.getElementById('portalSmsBody').value.trim();
+
+    if (!phone) return alert('Please enter a recipient mobile number.');
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Dispatched via Vonage...';
+
+    try {
+        const res = await fetch('/api/alerts/send-sms', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phoneNumber: phone, location, disease, message })
+        });
+        const data = await res.json();
+
+        const toast = document.getElementById('smsToast');
+        const body = document.getElementById('smsToastBody');
+        body.innerText = `📡 Alert dispatched to +91-${phone.slice(-10)} via Vonage Gateway.`;
+        toast.style.display = 'block';
+        setTimeout(() => { toast.style.display = 'none'; }, 6000);
+    } catch (err) {
+        alert('Failed to send SMS alert.');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Transmit SMS via Vonage';
+    }
+}
+
 // --- SMS ALERTS TRIGGER & BROADCAST DISPATCHER ---
 async function triggerMockSmsAlert(customMsg) {
-    const phone = prompt('Enter 10-digit mobile number to send emergency SMS alert:', '+91 98765 43210');
+    const phone = prompt('Enter 10-digit mobile number to send emergency SMS alert:', '9616958410');
     if (!phone) return;
 
     try {
@@ -86,7 +154,7 @@ async function triggerMockSmsAlert(customMsg) {
         
         const toast = document.getElementById('smsToast');
         const body = document.getElementById('smsToastBody');
-        body.innerText = `📡 Alert dispatched to ${phone}. (Status: ${data.result.sid ? 'Delivered via Twilio' : 'Queued/Broadcast Logged'})`;
+        body.innerText = `📡 Alert dispatched to ${phone} via Vonage Gateway.`;
         toast.style.display = 'block';
         setTimeout(() => { toast.style.display = 'none'; }, 6000);
     } catch (e) {
@@ -293,14 +361,15 @@ document.getElementById('reportForm').addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const submitBtn = document.getElementById('submitBtn');
-    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analyzing with AI Model & Locating Nearest Vet...';
+    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving Case, Referencing Lab & Dispatching SMS...';
     submitBtn.disabled = true;
 
     const selectedSymptoms = Array.from(document.querySelectorAll('input[name="symp"]:checked')).map(c => c.value);
     const formData = new FormData();
 
+    const reporterPhone = document.getElementById('reporterPhone').value;
     formData.append('reporterName', document.getElementById('reporterName').value);
-    formData.append('reporterPhone', document.getElementById('reporterPhone').value);
+    formData.append('reporterPhone', reporterPhone);
     formData.append('fullAddress', document.getElementById('addressSearchInput').value);
     formData.append('village', document.getElementById('village').value);
     formData.append('district', document.getElementById('district').value);
@@ -325,20 +394,18 @@ document.getElementById('reportForm').addEventListener('submit', async (e) => {
             document.getElementById('previewContainer').style.display = 'none';
             document.getElementById('uploadPlaceholder').style.display = 'block';
 
-            if (data.report.aiReport && (data.report.aiReport.severity === 'CRITICAL' || data.report.aiReport.severity === 'HIGH')) {
-                const toast = document.getElementById('smsToast');
-                const body = document.getElementById('smsToastBody');
-                body.innerText = `📡 Outbreak Alert Dispatched: High risk ${data.report.aiReport.suspectedProblem} registered. SMS sent to ${data.report.reporterPhone || 'local farmers'}.`;
-                toast.style.display = 'block';
-                setTimeout(() => { toast.style.display = 'none'; }, 6000);
-            }
+            const toast = document.getElementById('smsToast');
+            const body = document.getElementById('smsToastBody');
+            body.innerText = `📡 Report stored in database, lab test sample (${data.sampleId}) registered, and SMS dispatched to ${reporterPhone} via Vonage.`;
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 6000);
         } else {
             alert('Submission error: ' + (data.error || 'Unknown error occurred.'));
         }
     } catch (err) {
-        alert('Server unreachable');
+        alert('Server unreachable. Please check connection.');
     } finally {
-        submitBtn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Run AI Diagnosis & Find Nearest Doctor';
+        submitBtn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Store Case, Auto-Refer Lab & Send Real SMS';
         submitBtn.disabled = false;
     }
 });
@@ -375,6 +442,7 @@ function renderDetailedAIReport(report) {
 
         <div style="font-size:0.85rem; line-height:1.5;">
             <p><strong>🐄 Species:</strong> ${ai.identifiedSpecies || report.species}</p>
+            <p><strong>🏷️ Tag UID:</strong> ${report.animalTag}</p>
             <p><strong>🔍 Visual Image Findings:</strong> ${ai.visualFindings || 'Analyzed based on reported clinical signs.'}</p>
             <p style="margin-top:4px;"><strong>⚠️ Primary Diagnosis:</strong> <span style="color:#b91c1c; font-weight:700;">${ai.suspectedProblem || 'Undifferentiated Condition'}</span></p>
             <p><strong>☣️ Zoonotic to Humans:</strong> ${ai.isZoonotic ? '⚠️ YES (Follow strict biosafety)' : 'No direct human transmission'}</p>
@@ -719,7 +787,7 @@ function triggerGenerateReport() {
 async function searchVaccinationRecord() {
     const tagInput = document.getElementById('vaxSearchInput');
     const tag = tagInput ? tagInput.value.trim() : '';
-    if (!tag) return alert('Please enter an ear tag UID (e.g. IND-2024-7856 or IND-2024-9021)');
+    if (!tag) return alert('Please enter an ear tag UID (e.g. IND-2026-8801 or IND-2024-7856)');
 
     const container = document.getElementById('vaxResultContainer');
     container.innerHTML = `<p style="color:var(--primary);"><i class="fa-solid fa-spinner fa-spin"></i> Retrieving vaccination history...</p>`;
@@ -807,6 +875,7 @@ async function dispatchLabSample(reportId, sampleType) {
         body: JSON.stringify({ reportId, sampleType, labName, paravetName: 'Verified Field Officer' })
     });
     alert('Specimen dispatched into cold chain transit!');
+    loadLabReferrals();
 }
 
 async function loadLabReferrals() {

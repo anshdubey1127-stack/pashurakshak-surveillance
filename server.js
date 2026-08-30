@@ -313,7 +313,7 @@ Return STRICT JSON:
 
 // --- API ROUTES ---
 
-// 1. Submit Sickness Report & Send Real SMS via Vonage
+// 1. Submit Sickness Report: Stores report, herd record, and automatic lab referral, then sends real SMS
 app.post('/api/reports', upload.single('cattleImage'), async (req, res) => {
     try {
         const { reporterName, reporterPhone, fullAddress, village, district, species, animalTag, animalAge, symptoms, notes, affectedCount, mortalityCount, latitude, longitude } = req.body;
@@ -352,35 +352,41 @@ app.post('/api/reports', upload.single('cattleImage'), async (req, res) => {
             JSON.stringify(nearestVet), JSON.stringify(aiReport)
         );
 
-        if (aiReport.severity === 'CRITICAL' || aiReport.severity === 'HIGH') {
-            db.prepare(`
-                INSERT INTO alerts (alertId, reportId, location, disease, severity, isZoonotic, advisories, timestamp, status)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `).run('ALT-' + Date.now(), reportId, fullAddress || `${village}, ${district}`, aiReport.suspectedProblem, aiReport.severity, aiReport.isZoonotic ? 1 : 0, JSON.stringify(aiReport.advisories), timestamp, 'ACTIVE');
+        // Store active alert
+        db.prepare(`
+            INSERT INTO alerts (alertId, reportId, location, disease, severity, isZoonotic, advisories, timestamp, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run('ALT-' + Date.now(), reportId, fullAddress || `${village}, ${district}`, aiReport.suspectedProblem, aiReport.severity, aiReport.isZoonotic ? 1 : 0, JSON.stringify(aiReport.advisories), timestamp, 'ACTIVE');
 
-            // Dispatch Real SMS through Vonage
-            if (reporterPhone && reporterPhone !== 'N/A') {
-                const smsText = `EMERGENCY ALERT: ${aiReport.suspectedProblem} detected in ${village}. Isolate animal immediately. Helpline: 1962`;
-                sendSMSAlert(reporterPhone, smsText);
-            }
-        }
+        // Store herd history entry
+        const assignedTag = (animalTag && animalTag.trim().length > 0) ? animalTag.toUpperCase() : ('IND-' + Math.floor(100000 + Math.random() * 900000));
+        db.prepare(`
+            INSERT INTO herds (tag, species, owner, village, date, problem, symptoms, notes, imageUrl)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(assignedTag, species, reporterName || 'Farmer', village || 'Local Area', timestamp, aiReport.suspectedProblem, JSON.stringify(parsedSymptoms), notes || '', imageUrl);
 
-        if (animalTag && animalTag !== 'IND-UNTAGGED') {
-            db.prepare(`
-                INSERT INTO herds (tag, species, owner, village, date, problem, symptoms, notes, imageUrl)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `).run(animalTag.toUpperCase(), species, reporterName || 'Farmer', village || 'Local', timestamp, aiReport.suspectedProblem, JSON.stringify(parsedSymptoms), notes || '', imageUrl);
+        // Automatically register diagnostic lab sample
+        const sampleId = 'SAM-' + Date.now();
+        db.prepare(`
+            INSERT INTO labs (sampleId, reportId, sampleType, labName, paravetName, status, result, createdAt, updatedAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(sampleId, reportId, aiReport.sampleProtocol || 'Clinical Lesion Swab', 'State Animal Disease Diagnostic Lab (ADDL)', reporterName || 'Paravet Officer', 'SAMPLE_COLLECTED', 'PENDING', timestamp, timestamp);
+
+        // Send confirmation and advisory SMS to farmer
+        if (reporterPhone && reporterPhone.replace(/[^0-9]/g, '').length >= 10) {
+            const smsText = `PASHURAKSHAK: Case ${reportId} registered. Suspected: ${aiReport.suspectedProblem}. Nearest Doctor: ${nearestVet.clinic} (${nearestVet.phone}). Helpline: 1962`;
+            sendSMSAlert(reporterPhone, smsText);
         }
 
         const fullReport = {
             id: reportId, timestamp, reporterName: reporterName || 'Farmer', reporterPhone: reporterPhone || '+91 98765 43210',
             fullAddress: fullAddress || `${village}, ${district}`, village: village || 'Local Area', district: district || 'Ghaziabad',
-            species: species || 'Cattle (Cow)', animalTag: animalTag || 'IND-UNTAGGED', animalAge: animalAge || '4 Years',
+            species: species || 'Cattle (Cow)', animalTag: assignedTag, animalAge: animalAge || '4 Years',
             notes: notes || '', imageUrl, symptoms: parsedSymptoms, affectedCount: Number(affectedCount) || 1,
             mortalityCount: Number(mortalityCount) || 0, latitude: lat, longitude: lng, nearestVet, aiReport
         };
 
-        res.status(201).json({ message: 'Case created', report: fullReport });
+        res.status(201).json({ message: 'Case created', report: fullReport, sampleId });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -389,7 +395,7 @@ app.post('/api/reports', upload.single('cattleImage'), async (req, res) => {
 // 2. Direct Manual SMS Dispatch Endpoint
 app.post('/api/alerts/send-sms', async (req, res) => {
     const { phoneNumber, message, location, disease } = req.body;
-    const bodyText = message || `PashuRakshak Alert: Suspected ${disease || 'infection'} detected near ${location || 'your area'}. Call 1962.`;
+    const bodyText = message || `PashuRakshak Alert: Suspected ${disease || 'infection'} detected near ${location || 'your area'}. Restrict herd movement & Call 1962.`;
     const result = await sendSMSAlert(phoneNumber || '9616958410', bodyText);
     res.json({ message: 'SMS dispatch initiated', result });
 });

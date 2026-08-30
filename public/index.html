@@ -84,7 +84,7 @@
                 <button class="side-link" onclick="switchMainTab('lab-tab', this)">
                     <i class="fa-solid fa-flask-vial"></i> Laboratory Reports
                 </button>
-                <button class="side-link" onclick="triggerMockSmsAlert()">
+                <button class="side-link" onclick="switchMainTab('alerts-tab', this)">
                     <i class="fa-solid fa-bell"></i> Alerts & Notifications
                 </button>
                 <button class="side-link" onclick="switchMainTab('settings-tab', this)">
@@ -133,9 +133,9 @@
                             <h4>Treatment</h4>
                             <p>AI Clinical Triage</p>
                         </div>
-                        <div class="qa-card" onclick="switchMainTab('dashboard-tab')">
+                        <div class="qa-card" onclick="switchMainTab('alerts-tab')">
                             <div class="qa-icon advise"><i class="fa-solid fa-bullhorn"></i></div>
-                            <h4>Advisories</h4>
+                            <h4>Advisories & SMS</h4>
                             <p>Active outbreak alerts</p>
                         </div>
                         <div class="qa-card" onclick="callHelpline()">
@@ -248,7 +248,7 @@
                 </div>
             </section>
 
-            <!-- ================= SICKNESS REPORTING (10 LIVESTOCK SPECIES) ================= -->
+            <!-- ================= PANEL 3: SICKNESS REPORTING ================= -->
             <section id="report-tab" class="tab-content">
                 <div class="panel-grid">
                     <div class="card form-card">
@@ -256,7 +256,7 @@
                             <i class="fa-solid fa-notes-medical icon-accent"></i>
                             <div>
                                 <h3>Emergency Case Report & AI Diagnosis</h3>
-                                <p class="subtitle">Submit symptoms, photos, and get instant diagnosis + nearest official veterinary doctor.</p>
+                                <p class="subtitle">Submit symptoms, photos, and automatically store report, lab test, and send farmer SMS.</p>
                             </div>
                         </div>
                         
@@ -267,8 +267,8 @@
                                     <input type="text" id="reporterName" placeholder="e.g. Ramesh Kumar" required>
                                 </div>
                                 <div class="form-group">
-                                    <label><i class="fa-solid fa-phone"></i> Mobile Phone</label>
-                                    <input type="tel" id="reporterPhone" placeholder="10-digit mobile number">
+                                    <label><i class="fa-solid fa-phone"></i> Mobile Phone (Auto-SMS Alert Sent Here) *</label>
+                                    <input type="tel" id="reporterPhone" placeholder="10-digit mobile number" required>
                                 </div>
                             </div>
 
@@ -314,7 +314,7 @@
                                 </div>
                             </div>
 
-                            <!-- EXPANDED SPECIES SELECTOR (10 NATIONAL LIVESTOCK SPECIES) -->
+                            <!-- SPECIES & TAG -->
                             <div class="form-row">
                                 <div class="form-group">
                                     <label><i class="fa-solid fa-paw"></i> Livestock Species *</label>
@@ -334,7 +334,7 @@
                                 </div>
                                 <div class="form-group">
                                     <label><i class="fa-solid fa-tag"></i> Ear Tag / UID (Optional)</label>
-                                    <input type="text" id="animalTag" placeholder="e.g. IND-2024-7856">
+                                    <input type="text" id="animalTag" placeholder="e.g. IND-2026-8801">
                                 </div>
                             </div>
 
@@ -386,7 +386,7 @@
                             </div>
 
                             <button type="submit" class="btn-submit" id="submitBtn">
-                                <i class="fa-solid fa-wand-magic-sparkles"></i> Run AI Diagnosis & Find Nearest Doctor
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> Store Case, Auto-Refer Lab & Send Real SMS
                             </button>
                         </form>
                     </div>
@@ -405,6 +405,67 @@
                         </div>
 
                         <div id="triageResultBox" class="card triage-box" style="display:none;"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= PANEL 4: ALERTS & SMS NOTIFICATION CENTER ================= -->
+            <section id="alerts-tab" class="tab-content">
+                <div class="dashboard-split-grid" style="grid-template-columns: 1.1fr 1fr;">
+                    <!-- ACTIVE OUTBREAK ALERTS STREAM -->
+                    <div class="card">
+                        <div class="card-head">
+                            <i class="fa-solid fa-bell icon-accent" style="color:#ea580c;"></i>
+                            <div>
+                                <h3>Active Outbreak Containment Advisories</h3>
+                                <p class="subtitle">Live database alerts generated from reported clinical cases</p>
+                            </div>
+                        </div>
+                        <div id="alertsStreamFull" class="alerts-list" style="max-height: 520px;">
+                            <p class="empty-text">Loading alerts...</p>
+                        </div>
+                    </div>
+
+                    <!-- DIRECT SMS BROADCAST PORTAL -->
+                    <div class="card">
+                        <div class="card-head">
+                            <i class="fa-solid fa-tower-broadcast icon-accent"></i>
+                            <div>
+                                <h3>Direct SMS Broadcast (Vonage Gateway)</h3>
+                                <p class="subtitle">Send instant containment advisories to farmers in high-risk zones</p>
+                            </div>
+                        </div>
+
+                        <form id="portalSmsForm" onsubmit="handlePortalSmsSubmit(event)">
+                            <div class="form-group">
+                                <label><i class="fa-solid fa-phone"></i> Target Farmer Mobile Number *</label>
+                                <input type="tel" id="portalSmsPhone" placeholder="10-digit mobile number" value="9616958410" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label><i class="fa-solid fa-location-dot"></i> Outbreak Sector / Village</label>
+                                <input type="text" id="portalSmsLocation" placeholder="e.g. Muradnagar Sector 4" value="Ghaziabad Block">
+                            </div>
+
+                            <div class="form-group">
+                                <label><i class="fa-solid fa-virus"></i> Suspected Disease</label>
+                                <select id="portalSmsDisease">
+                                    <option value="Foot and Mouth Disease (FMD)">Foot & Mouth Disease (FMD)</option>
+                                    <option value="Lumpy Skin Disease (LSD)">Lumpy Skin Disease (LSD)</option>
+                                    <option value="Hemorrhagic Septicemia (HS)">Hemorrhagic Septicemia (HS)</option>
+                                    <option value="Anthrax Peracute Spores">Anthrax</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label><i class="fa-solid fa-comment-sms"></i> Custom SMS Message Body</label>
+                                <textarea id="portalSmsBody" rows="3">🚨 PASHURAKSHAK EMERGENCY: Outbreak risk detected in your village area. Restrict herd movement and call 1962.</textarea>
+                            </div>
+
+                            <button type="submit" id="btnPortalSms" class="btn-submit">
+                                <i class="fa-solid fa-paper-plane"></i> Transmit SMS via Vonage
+                            </button>
+                        </form>
                     </div>
                 </div>
             </section>
@@ -528,7 +589,7 @@
                     </div>
 
                     <div class="search-bar-wrap">
-                        <input type="text" id="vaxSearchInput" placeholder="Enter Animal Ear Tag UID (e.g. IND-2024-7856 or IND-2024-9021)">
+                        <input type="text" id="vaxSearchInput" placeholder="Enter Animal Ear Tag UID (e.g. IND-2026-8801 or IND-2024-7856)">
                         <button onclick="searchVaccinationRecord()" class="btn-search"><i class="fa-solid fa-magnifying-glass"></i> Check Status</button>
                     </div>
 
@@ -585,7 +646,7 @@
                     </div>
 
                     <div class="search-bar-wrap">
-                        <input type="text" id="tagSearchInput" placeholder="Enter 12-Digit Tag UID (e.g. IND-2024-7856)">
+                        <input type="text" id="tagSearchInput" placeholder="Enter Ear Tag UID (e.g. IND-2026-8801)">
                         <button onclick="searchAnimalTag()" class="btn-search"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
                     </div>
 
@@ -708,13 +769,14 @@
         </div>
     </div>
 
+    <!-- MOCK & REAL SMS TOAST -->
     <div id="smsToast" class="sms-toast-modal" style="display:none;">
         <div class="sms-toast-header">
             <i class="fa-solid fa-tower-broadcast"></i>
-            <span>Emergency SMS/IVR Broadcast Triggered</span>
+            <span>Emergency SMS Broadcast</span>
             <button onclick="document.getElementById('smsToast').style.display='none'"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        <p id="smsToastBody">📡 Sent High-Risk containment SMS to registered cattle farmers in the sector.</p>
+        <p id="smsToastBody">📡 Sent SMS containment alert via Vonage Gateway.</p>
     </div>
 
     <!-- GOOGLE TRANSLATE ENGINE -->
