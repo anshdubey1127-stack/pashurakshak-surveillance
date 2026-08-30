@@ -3,734 +3,346 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PashuRakshak | AI Animal Health & Outbreak Surveillance</title>
-    <link rel="stylesheet" href="style.css">
+    <title>PashuRakshak | National Animal Disease Surveillance Portal</title>
+    
+    <!-- Typography & Leaflet CSS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        .goog-te-gadget-simple {
-            background-color: rgba(255, 255, 255, 0.12) !important;
-            border: 1px solid rgba(255, 255, 255, 0.25) !important;
-            padding: 4px 8px !important;
-            border-radius: 8px !important;
-            font-size: 0.85rem !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            cursor: pointer !important;
-        }
-        .goog-te-gadget-simple .goog-te-menu-value span { color: #ffffff !important; font-weight: 600 !important; }
-        .goog-te-gadget-icon, .goog-te-banner-frame.skiptranslate { display: none !important; }
-        body { top: 0px !important; }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-    <!-- TOP GLOBAL NAVBAR -->
-    <header class="navbar">
-        <div class="brand-container">
-            <div class="logo-shield"><i class="fa-solid fa-shield-cat"></i></div>
-            <div>
-                <h2>PashuRakshak <span class="ai-badge"><i class="fa-solid fa-sparkles"></i> AI Vision Core</span></h2>
-                <p class="tagline">Building a healthier future for livestock & farmers 🌿 | SIH 2026</p>
+    <!-- Top Institutional Header -->
+    <header class="gov-header">
+        <div class="header-inner">
+            <div class="gov-brand">
+                <div class="gov-emblem">
+                    <span class="emblem-text">GOI</span>
+                </div>
+                <div class="gov-titles">
+                    <span class="dept-sub">Department of Animal Husbandry & Dairying</span>
+                    <h1 class="portal-title">PashuRakshak Surveillance & Rapid Response Portal</h1>
+                </div>
             </div>
-        </div>
-
-        <div class="header-actions">
-            <div id="google_translate_element" style="display: flex; align-items: center;"></div>
-
-            <div class="status-indicator online" id="offlineIndicator" onclick="toggleMockOffline()">
-                <span class="status-pulse"></span>
-                <span id="statusText">Online / AI Active</span>
-            </div>
-
-            <div class="user-profile-pill" onclick="switchMainTab('settings-tab')">
-                <i class="fa-solid fa-user-doctor"></i>
-                <span id="navDoctorName">Dr. Patel</span> <i class="fa-solid fa-gear" style="font-size:0.75rem; margin-left:4px;"></i>
+            <div class="gov-meta">
+                <div class="sync-status">
+                    <span class="pulse-dot"></span>
+                    <span>National Node: Live</span>
+                </div>
+                <div class="helpline-badge">
+                    <span>Emergency Toll-Free: <strong>1962</strong></span>
+                </div>
+                <div id="google_translate_element"></div>
             </div>
         </div>
     </header>
 
-    <div id="offlineBanner" class="offline-sync-banner" style="display:none;">
-        <i class="fa-solid fa-wifi-slash"></i>
-        <span><strong>Offline Mode Active:</strong> Data cached locally. Auto-sync will trigger once connectivity returns.</span>
-    </div>
+    <!-- Global Navigation Tabs -->
+    <nav class="gov-nav">
+        <div class="nav-inner">
+            <button class="nav-tab active" data-tab="overview">National Overview</button>
+            <button class="nav-tab" data-tab="intake">Report Case (Form 2A)</button>
+            <button class="nav-tab" data-tab="outbreaks">Active Outbreak Map</button>
+            <button class="nav-tab" data-tab="registry">Herd Registry & Labs</button>
+            <button class="nav-tab" data-tab="bulletins">Advisories & SMS</button>
+        </div>
+    </nav>
 
-    <!-- MAIN APP CONTAINER WITH SIDEBAR -->
-    <div class="app-layout">
+    <!-- Main Content Container -->
+    <main class="gov-container">
         
-        <!-- SIDEBAR NAVIGATION -->
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <small>PROFESSIONAL PORTAL</small>
-                <h4 id="sideDoctorName">Dr. Patel</h4>
+        <!-- Tab 1: Overview & Metrics -->
+        <section id="tab-overview" class="tab-content active">
+            <!-- Key Metric Cards -->
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <span class="kpi-label">Total Surveillance Reports</span>
+                    <div class="kpi-val" id="kpi-total-reports">--</div>
+                    <span class="kpi-meta text-success">↑ Official Case Registry</span>
+                </div>
+                <div class="kpi-card">
+                    <span class="kpi-label">Active Containment Zones</span>
+                    <div class="kpi-val text-danger" id="kpi-active-alerts">--</div>
+                    <span class="kpi-meta text-danger">● High-Priority Sectors</span>
+                </div>
+                <div class="kpi-card">
+                    <span class="kpi-label">Affected Livestock Count</span>
+                    <div class="kpi-val text-warning" id="kpi-affected-count">--</div>
+                    <span class="kpi-meta">Across Monitored Blocks</span>
+                </div>
+                <div class="kpi-card">
+                    <span class="kpi-label">Pending Lab Confirmations</span>
+                    <div class="kpi-val" id="kpi-pending-labs">--</div>
+                    <span class="kpi-meta">Diagnostic Serology</span>
+                </div>
             </div>
-            <nav class="sidebar-nav">
-                <button class="side-link active" onclick="switchMainTab('welcome-tab', this)">
-                    <i class="fa-solid fa-house"></i> Home / Portal
-                </button>
-                <button class="side-link" onclick="switchMainTab('dashboard-tab', this)">
-                    <i class="fa-solid fa-chart-line"></i> Dashboard Overview
-                </button>
-                <button class="side-link" onclick="switchMainTab('report-tab', this)">
-                    <i class="fa-solid fa-file-medical"></i> Case Management
-                </button>
-                <button class="side-link" onclick="switchMainTab('herd-tab', this)">
-                    <i class="fa-solid fa-tags"></i> Herd Management
-                </button>
-                <button class="side-link" onclick="switchMainTab('vax-tab', this)">
-                    <i class="fa-solid fa-syringe"></i> Vaccination Records
-                </button>
-                <button class="side-link" onclick="switchMainTab('lab-tab', this)">
-                    <i class="fa-solid fa-flask-vial"></i> Laboratory Reports
-                </button>
-                <button class="side-link" onclick="triggerMockSmsAlert()">
-                    <i class="fa-solid fa-bell"></i> Alerts & Notifications
-                </button>
-                <button class="side-link" onclick="switchMainTab('settings-tab', this)">
-                    <i class="fa-solid fa-sliders"></i> System Settings
-                </button>
-            </nav>
-        </aside>
 
-        <!-- MAIN VIEW AREA -->
-        <main class="main-content">
-
-            <!-- ================= PANEL 1: WELCOME / FARMER ONBOARDING ================= -->
-            <section id="welcome-tab" class="tab-content active">
-                <div class="welcome-container">
-                    <div class="welcome-hero-card">
-                        <div class="welcome-text">
-                            <span class="sub-greeting">Welcome!</span>
-                            <h2>Let's keep our livestock healthy 🌿</h2>
-                            <p>Report symptoms, track immunization, request immediate veterinary support, or broadcast outbreak advisories.</p>
-                            
-                            <div class="hero-cta-box">
-                                <button class="btn-hero-report" onclick="navigateToReport()">
-                                    <i class="fa-solid fa-file-circle-plus"></i>
-                                    <div>
-                                        <strong>Report New Case</strong>
-                                        <small>Report symptoms or mortality immediately</small>
-                                    </div>
-                                    <i class="fa-solid fa-arrow-right" style="margin-left:auto;"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="welcome-illustration">
-                            <i class="fa-solid fa-cow illustration-icon"></i>
-                        </div>
-                    </div>
-
-                    <h4 class="section-title">Quick Actions</h4>
-                    <div class="quick-actions-grid">
-                        <div class="qa-card" onclick="switchMainTab('vax-tab')">
-                            <div class="qa-icon vax"><i class="fa-solid fa-syringe"></i></div>
-                            <h4>Vaccination</h4>
-                            <p>Track doses & boosters</p>
-                        </div>
-                        <div class="qa-card" onclick="navigateToReport()">
-                            <div class="qa-icon treat"><i class="fa-solid fa-notes-medical"></i></div>
-                            <h4>Treatment</h4>
-                            <p>AI Clinical Triage</p>
-                        </div>
-                        <div class="qa-card" onclick="switchMainTab('dashboard-tab')">
-                            <div class="qa-icon advise"><i class="fa-solid fa-bullhorn"></i></div>
-                            <h4>Advisories</h4>
-                            <p>Active outbreak alerts</p>
-                        </div>
-                        <div class="qa-card" onclick="callHelpline()">
-                            <div class="qa-icon help"><i class="fa-solid fa-phone-volume"></i></div>
-                            <h4>Helpline</h4>
-                            <p>Call 1962 (National)</p>
-                        </div>
+            <!-- Priority Case Queue & Hotspots Table -->
+            <div class="gov-card">
+                <div class="card-head">
+                    <h2>Live Surveillance Feed & Triage Queue</h2>
+                    <div class="card-actions">
+                        <input type="text" id="filter-search" class="gov-input input-sm" placeholder="Filter by Tag UID, District or Disease...">
                     </div>
                 </div>
-            </section>
+                <div class="table-responsive">
+                    <table class="gov-table">
+                        <thead>
+                            <tr>
+                                <th>Case ID & Date</th>
+                                <th>Tag UID / Species</th>
+                                <th>Block & District</th>
+                                <th>Suspected Etiology</th>
+                                <th>Priority</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="case-feed-body">
+                            <tr>
+                                <td colspan="6" class="text-center py-4">Loading official registry data...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
 
-            <!-- ================= PANEL 2: SURVEILLANCE DASHBOARD ================= -->
-            <section id="dashboard-tab" class="tab-content">
-                <div class="dashboard-header-bar">
+        <!-- Tab 2: Case Intake Form -->
+        <section id="tab-intake" class="tab-content">
+            <div class="gov-card max-w-4xl mx-auto">
+                <div class="card-head border-b">
                     <div>
-                        <h2>Surveillance Dashboard</h2>
-                        <p class="subtitle">Real-time overview of animal health surveillance & disease clusters</p>
-                    </div>
-                    <div class="search-box-header">
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                        <input type="text" id="dashSearchInput" placeholder="Filter cases by tag or locality..." oninput="filterDashboardCases(this.value)">
+                        <h2>Epidemiological Investigation Form (Form 2A)</h2>
+                        <p class="text-muted">Field report ingestion for veterinary officers, paravets, and registered farmers.</p>
                     </div>
                 </div>
 
-                <!-- LIVE METRICS FROM DATABASE -->
-                <div class="stats-row">
-                    <div class="stat-card">
-                        <span class="stat-label">Total Reports</span>
-                        <h3 id="mTotal">0</h3>
-                        <span class="stat-trend neutral"><i class="fa-solid fa-database"></i> Live Database Record</span>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-label">Active Cases</span>
-                        <h3 id="mAffected">0</h3>
-                        <span class="stat-trend positive"><i class="fa-solid fa-circle-exclamation"></i> Under Surveillance</span>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-label">Resolved Cases</span>
-                        <h3 id="mResolved">0</h3>
-                        <span class="stat-trend positive"><i class="fa-solid fa-check-double"></i> Completed Treatment</span>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-label">Mortality Rate</span>
-                        <h3 id="mMortalityRate">0.0%</h3>
-                        <span class="stat-trend negative" id="mMortalityCountSub">0 Total Deaths</span>
-                    </div>
-                </div>
-
-                <div id="epicenterBanner" class="epicenter-card" style="display:none; margin-top:1.2rem;">
-                    <div class="epicenter-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
-                    <div class="epicenter-details">
-                        <h4>🔥 Most Heavily Affected Outbreak Epicenter</h4>
-                        <p id="epicenterText">Calculating active epicenter...</p>
-                        <span id="epicenterSub" class="epicenter-sub"></span>
-                    </div>
-                </div>
-
-                <!-- SPLIT: DISEASE DISTRIBUTION & GEOGRAPHIC RISK MAP -->
-                <div class="dashboard-split-grid">
-                    <div class="card">
-                        <div class="card-head">
-                            <i class="fa-solid fa-chart-column icon-accent"></i>
-                            <div>
-                                <h3>Disease Distribution (Database Confirmed)</h3>
-                                <p class="subtitle">Live case count categorized across major livestock conditions</p>
-                            </div>
-                        </div>
-                        <div class="chart-bars-wrap" id="chartBars"></div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-head">
-                            <i class="fa-solid fa-earth-americas icon-accent"></i>
-                            <div>
-                                <h3>Geographic Risk Map</h3>
-                                <p class="subtitle">Real-time geospatial hotspot clusters & containment rings</p>
-                            </div>
-                        </div>
-                        <div id="map"></div>
-                    </div>
-                </div>
-
-                <!-- SPLIT: RECENT REPORTS & RECENT ALERTS -->
-                <div class="dashboard-split-grid" style="margin-top:1.2rem;">
-                    <div class="card">
-                        <div class="card-head">
-                            <i class="fa-solid fa-clock-rotate-left icon-accent"></i>
-                            <div>
-                                <h3>Recent Reports</h3>
-                                <p class="subtitle">Click any report to open full case file and action panel</p>
-                            </div>
-                        </div>
-                        <div class="recent-cases-list" id="recentCasesList">
-                            <p class="empty-text">No cases recorded yet.</p>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-head">
-                            <i class="fa-solid fa-triangle-exclamation icon-accent" style="color:#ea580c;"></i>
-                            <div>
-                                <h3>Recent Alerts & Advisories</h3>
-                                <p class="subtitle">Broadcast containment alerts across high-risk sectors</p>
-                            </div>
-                        </div>
-                        <div id="alertsContainer" class="alerts-list">
-                            <p class="empty-text">No active outbreak alerts.</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ================= SICKNESS REPORTING (10 LIVESTOCK SPECIES) ================= -->
-            <section id="report-tab" class="tab-content">
-                <div class="panel-grid">
-                    <div class="card form-card">
-                        <div class="card-head">
-                            <i class="fa-solid fa-notes-medical icon-accent"></i>
-                            <div>
-                                <h3>Emergency Case Report & AI Diagnosis</h3>
-                                <p class="subtitle">Submit symptoms, photos, and get instant diagnosis + nearest official veterinary doctor.</p>
-                            </div>
-                        </div>
-                        
-                        <form id="reportForm">
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label><i class="fa-solid fa-user"></i> Farmer / Paravet Name *</label>
-                                    <input type="text" id="reporterName" placeholder="e.g. Ramesh Kumar" required>
-                                </div>
-                                <div class="form-group">
-                                    <label><i class="fa-solid fa-phone"></i> Mobile Phone</label>
-                                    <input type="tel" id="reporterPhone" placeholder="10-digit mobile number">
-                                </div>
-                            </div>
-
-                            <!-- 3 LOCATION PICKER MODES -->
-                            <div class="location-box-master">
-                                <label class="section-title-label"><i class="fa-solid fa-map-location-dot"></i> Choose Incident Location (3 Flexible Options)</label>
-                                
-                                <div class="form-group autocomplete-wrapper">
-                                    <label class="sub-lbl">Option 1: Type Locality / Village / Colony</label>
-                                    <div class="search-input-box">
-                                        <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                                        <input type="text" id="addressSearchInput" placeholder="Start typing village, colony, block name..." autocomplete="off" oninput="handleAddressAutocomplete(this.value)">
-                                        <button type="button" class="btn-detect-gps" onclick="captureGPS()" title="Click to use device GPS">
-                                            <i class="fa-solid fa-location-crosshairs"></i> Option 2: Use GPS
-                                        </button>
-                                    </div>
-                                    <div id="addressSuggestions" class="suggestions-dropdown"></div>
-                                </div>
-
-                                <div class="slider-location-wrapper">
-                                    <label class="sub-lbl">Option 3: Fine-Tune Location using Sliders</label>
-                                    <div class="sliders-row">
-                                        <div class="slider-item">
-                                            <div class="slider-header"><span>Latitude:</span> <strong id="latSliderVal">28.6692</strong></div>
-                                            <input type="range" id="latSlider" min="8.0000" max="37.0000" step="0.005" value="28.6692" oninput="onSliderChange()">
-                                        </div>
-                                        <div class="slider-item">
-                                            <div class="slider-header"><span>Longitude:</span> <strong id="lngSliderVal">77.4538</strong></div>
-                                            <input type="range" id="lngSlider" min="68.0000" max="97.0000" step="0.005" value="77.4538" oninput="onSliderChange()">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label><i class="fa-solid fa-map-pin"></i> Resolved Locality *</label>
-                                    <input type="text" id="village" placeholder="Locality or Village" required>
-                                </div>
-                                <div class="form-group">
-                                    <label><i class="fa-solid fa-city"></i> District / State *</label>
-                                    <input type="text" id="district" placeholder="District name" required>
-                                </div>
-                            </div>
-
-                            <!-- EXPANDED SPECIES SELECTOR (10 NATIONAL LIVESTOCK SPECIES) -->
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label><i class="fa-solid fa-paw"></i> Livestock Species *</label>
-                                    <select id="species" required>
-                                        <option value="">-- Select Livestock Species --</option>
-                                        <option value="Cattle (Cow)">Cattle (Cow / Bovine)</option>
-                                        <option value="Buffalo">Buffalo (Bubalus bubalis)</option>
-                                        <option value="Goat">Goat (Capra hircus)</option>
-                                        <option value="Sheep">Sheep (Ovis aries)</option>
-                                        <option value="Swine / Pig">Swine / Pig (Sus scrofa)</option>
-                                        <option value="Poultry / Fowl">Poultry / Chicken / Fowl</option>
-                                        <option value="Equine (Horse / Pony / Mule)">Equine (Horse / Pony / Mule)</option>
-                                        <option value="Camel">Camel (Camelus dromedarius)</option>
-                                        <option value="Yak">Yak (Bos grunniens)</option>
-                                        <option value="Mithun">Mithun (Bos frontalis)</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label><i class="fa-solid fa-tag"></i> Ear Tag / UID (Optional)</label>
-                                    <input type="text" id="animalTag" placeholder="e.g. IND-2024-7856">
-                                </div>
-                            </div>
-
-                            <!-- PHOTO UPLOAD -->
+                <form id="report-form" class="gov-form" enctype="multipart/form-data">
+                    <fieldset class="form-section">
+                        <legend>1. Identification & Geographic Location</legend>
+                        <div class="form-grid-3">
                             <div class="form-group">
-                                <label><i class="fa-solid fa-camera"></i> Upload Animal / Lesion Photo (For Google AI Vision)</label>
-                                <div class="upload-dropzone" onclick="document.getElementById('cattleImage').click()">
-                                    <input type="file" id="cattleImage" accept="image/*" style="display:none;" onchange="previewImage(event)">
-                                    <div id="uploadPlaceholder">
-                                        <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
-                                        <p>Snap or upload photo of the infected animal or lesion</p>
-                                        <span class="sub-text">AI inspects images for lesions, nodules, discharge, or inflammation</span>
-                                    </div>
-                                    <div id="previewContainer" style="display:none;">
-                                        <img id="imagePreview" alt="Cattle Preview" />
-                                        <span class="change-img-btn"><i class="fa-solid fa-arrows-rotate"></i> Change Image</span>
-                                    </div>
-                                </div>
+                                <label for="reporterName">Reporting Person / Paravet Name *</label>
+                                <input type="text" id="reporterName" class="gov-input" required placeholder="e.g. Dr. Rajesh Kumar">
                             </div>
-
                             <div class="form-group">
-                                <label><i class="fa-solid fa-stethoscope"></i> Check Observed Symptoms *</label>
-                                <div class="checkbox-grid">
-                                    <label class="custom-chk"><input type="checkbox" name="symp" value="high_fever"> <span>High Fever</span></label>
-                                    <label class="custom-chk"><input type="checkbox" name="symp" value="blisters"> <span>Mouth/Hoof Blisters</span></label>
-                                    <label class="custom-chk"><input type="checkbox" name="symp" value="salivation"> <span>Excessive Drooling</span></label>
-                                    <label class="custom-chk"><input type="checkbox" name="symp" value="skin_nodules"> <span>Lumpy Skin Nodules</span></label>
-                                    <label class="custom-chk"><input type="checkbox" name="symp" value="mouth_sores"> <span>Mouth Ulcers / Diarrhea</span></label>
-                                    <label class="custom-chk"><input type="checkbox" name="symp" value="respiratory"> <span>Labored Breathing</span></label>
-                                    <label class="custom-chk"><input type="checkbox" name="symp" value="bloody_discharge"> <span>Dark Orifice Bleeding</span></label>
-                                    <label class="custom-chk"><input type="checkbox" name="symp" value="sudden_death"> <span>Sudden Death</span></label>
-                                </div>
+                                <label for="reporterPhone">Primary Contact Number (10-Digit) *</label>
+                                <input type="tel" id="reporterPhone" class="gov-input" required placeholder="9616958410" maxlength="10">
                             </div>
-
                             <div class="form-group">
-                                <label><i class="fa-solid fa-comment-medical"></i> Additional Farmer / Paravet Notes</label>
-                                <textarea id="notes" rows="3" placeholder="Describe milk drop, feed refusal, when symptoms started, previous medications given, or herd condition..."></textarea>
+                                <label for="species">Species Under Observation *</label>
+                                <select id="species" class="gov-input">
+                                    <option value="Cattle (Cow)">Cattle (Cow)</option>
+                                    <option value="Buffalo">Buffalo</option>
+                                    <option value="Goat">Goat (Caprine)</option>
+                                    <option value="Sheep">Sheep (Ovine)</option>
+                                    <option value="Pig / Swine">Pig / Swine</option>
+                                    <option value="Poultry">Poultry</option>
+                                    <option value="Equine">Equine (Horse/Mule)</option>
+                                </select>
                             </div>
+                        </div>
 
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Affected Animals Count</label>
-                                    <input type="number" id="affectedCount" min="1" value="1" required>
-                                </div>
-                                <div class="form-group">
-                                    <label>Mortality (Deaths)</label>
-                                    <input type="number" id="mortalityCount" min="0" value="0" required>
-                                </div>
+                        <div class="form-grid-3 mt-3">
+                            <div class="form-group">
+                                <label for="animalTag">Animal Ear Tag UID (INAPH)</label>
+                                <input type="text" id="animalTag" class="gov-input font-mono" placeholder="IND-2026-90412" value="IND-2026-8801">
                             </div>
+                            <div class="form-group">
+                                <label for="village">Village / Block</label>
+                                <input type="text" id="village" class="gov-input" required placeholder="e.g. Muradnagar">
+                            </div>
+                            <div class="form-group">
+                                <label for="district">District</label>
+                                <input type="text" id="district" class="gov-input" required placeholder="e.g. Ghaziabad">
+                            </div>
+                        </div>
+                    </fieldset>
 
-                            <button type="submit" class="btn-submit" id="submitBtn">
-                                <i class="fa-solid fa-wand-magic-sparkles"></i> Run AI Diagnosis & Find Nearest Doctor
-                            </button>
+                    <fieldset class="form-section mt-4">
+                        <legend>2. Clinical Signs & Lesion Assessment</legend>
+                        <label class="mb-2 block font-medium">Observed Clinical Signs (Select all applicable):</label>
+                        <div class="checkbox-cluster">
+                            <label class="checkbox-tile">
+                                <input type="checkbox" name="symptoms" value="blisters">
+                                <span>Oral / Hoof Blisters</span>
+                            </label>
+                            <label class="checkbox-tile">
+                                <input type="checkbox" name="symptoms" value="salivation">
+                                <span>Excessive Drooling</span>
+                            </label>
+                            <label class="checkbox-tile">
+                                <input type="checkbox" name="symptoms" value="skin_nodules">
+                                <span>Cutaneous Nodules</span>
+                            </label>
+                            <label class="checkbox-tile">
+                                <input type="checkbox" name="symptoms" value="fever">
+                                <span>High Pyrexia (&gt;104°F)</span>
+                            </label>
+                            <label class="checkbox-tile">
+                                <input type="checkbox" name="symptoms" value="lameness">
+                                <span>Severe Lameness</span>
+                            </label>
+                            <label class="checkbox-tile">
+                                <input type="checkbox" name="symptoms" value="sudden_death">
+                                <span>Peracute Death</span>
+                            </label>
+                            <label class="checkbox-tile">
+                                <input type="checkbox" name="symptoms" value="bloody_discharge">
+                                <span>Natural Orifice Hemorrhage</span>
+                            </label>
+                        </div>
+
+                        <div class="form-grid-2 mt-4">
+                            <div class="form-group">
+                                <label for="affectedCount">Total Herd Morbidity (Affected)</label>
+                                <input type="number" id="affectedCount" class="gov-input" value="1" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label for="mortalityCount">Herd Mortality (Dead)</label>
+                                <input type="number" id="mortalityCount" class="gov-input" value="0" min="0">
+                            </div>
+                        </div>
+
+                        <div class="form-group mt-3">
+                            <label for="cattleImage">Specimen / Lesion Clinical Photograph (Mandatory for Vision Triage)</label>
+                            <input type="file" id="cattleImage" class="gov-input file-input" accept="image/*">
+                        </div>
+
+                        <div class="form-group mt-3">
+                            <label for="notes">Clinical Observations / Paravet Notes</label>
+                            <textarea id="notes" class="gov-input" rows="2" placeholder="Describe lesion progression, onset timeline, vaccination history..."></textarea>
+                        </div>
+                    </fieldset>
+
+                    <div class="form-actions mt-4">
+                        <button type="submit" id="submit-btn" class="btn btn-primary">
+                            <span>Execute Triage & File Report</span>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Diagnosis Outcome Banner -->
+                <div id="triage-result" class="triage-box hidden mt-4"></div>
+            </div>
+        </section>
+
+        <!-- Tab 3: Outbreak GIS Map -->
+        <section id="tab-outbreaks" class="tab-content">
+            <div class="gov-card p-0">
+                <div class="card-head p-3 border-b">
+                    <h2>National Geospatial Disease Containment Grid</h2>
+                    <div class="legend-inline">
+                        <span class="legend-chip text-danger">● Critical Outbreak Zone (5km)</span>
+                        <span class="legend-chip text-warning">● Monitored Surveillance Ring (10km)</span>
+                        <span class="legend-chip text-success">● Government Veterinary Center</span>
+                    </div>
+                </div>
+                <div id="map" class="map-viewport"></div>
+            </div>
+        </section>
+
+        <!-- Tab 4: Herd Registry & Lab Referral -->
+        <section id="tab-registry" class="tab-content">
+            <div class="grid-2col">
+                <div class="gov-card">
+                    <div class="card-head border-b">
+                        <h2>Animal Tag UID History Inspector</h2>
+                    </div>
+                    <div class="p-3">
+                        <div class="input-action-group">
+                            <input type="text" id="search-tag-input" class="gov-input font-mono" placeholder="Enter INAPH Tag (e.g. IND-2026-8801)">
+                            <button id="btn-fetch-tag" class="btn btn-secondary">Search Record</button>
+                        </div>
+                        <div id="tag-history-container" class="mt-3">
+                            <p class="text-muted text-center py-4">Enter an Ear Tag UID above to verify past clinical history and vaccination status.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="gov-card">
+                    <div class="card-head border-b">
+                        <h2>Diagnostic Laboratory Referrals</h2>
+                    </div>
+                    <div class="p-3">
+                        <form id="lab-referral-form" class="gov-form">
+                            <div class="form-group">
+                                <label for="labReportId">Linked Surveillance Case ID *</label>
+                                <input type="text" id="labReportId" class="gov-input font-mono" required placeholder="CASE-2026-XXXXXX">
+                            </div>
+                            <div class="form-group mt-2">
+                                <label for="sampleType">Specimen Type Collected</label>
+                                <select id="sampleType" class="gov-input">
+                                    <option value="Nasal/Oral Swab (VTM)">Nasal/Oral Swab (VTM)</option>
+                                    <option value="Whole Blood in EDTA">Whole Blood in EDTA</option>
+                                    <option value="Serum Clot Vial">Serum Clot Vial</option>
+                                    <option value="Vesicular Epithelium Flap">Vesicular Epithelium Flap</option>
+                                    <option value="Skin Scab Biopsy">Skin Scab Biopsy</option>
+                                </select>
+                            </div>
+                            <div class="form-group mt-2">
+                                <label for="labName">Target Diagnostic Institution</label>
+                                <input type="text" id="labName" class="gov-input" value="State Disease Diagnostic Laboratory (CADL)">
+                            </div>
+                            <button type="submit" class="btn btn-secondary mt-3">Register Lab Specimen</button>
                         </form>
                     </div>
-
-                    <div class="side-panel">
-                        <div class="card">
-                            <div class="card-head">
-                                <i class="fa-solid fa-map-pin icon-accent"></i>
-                                <h4>Incident Location & Assigned Clinic</h4>
-                            </div>
-                            <div id="entryMap"></div>
-                            <div class="coord-bar">
-                                <span><strong>Lat:</strong> <span id="displayLat">28.6692</span></span>
-                                <span><strong>Lng:</strong> <span id="displayLng">77.4538</span></span>
-                            </div>
-                        </div>
-
-                        <div id="triageResultBox" class="card triage-box" style="display:none;"></div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ================= DEDICATED SYSTEM & USER ACCOUNT SETTINGS ================= -->
-            <section id="settings-tab" class="tab-content">
-                <div class="card">
-                    <div class="card-head">
-                        <i class="fa-solid fa-user-gear icon-accent"></i>
-                        <div>
-                            <h3>Account & Surveillance Settings</h3>
-                            <p class="subtitle">Manage user account profile, contact credentials, alert radius, and emergency SMS settings</p>
-                        </div>
-                    </div>
-
-                    <div class="settings-grid">
-                        <!-- 1. USER ACCOUNT DETAILS -->
-                        <div class="settings-section">
-                            <h4><i class="fa-solid fa-id-card-clip"></i> User Account & Profile Details</h4>
-                            <div class="form-row" style="margin-top: 12px;">
-                                <div class="form-group">
-                                    <label><i class="fa-solid fa-user"></i> Full Name</label>
-                                    <input type="text" id="settingUserName" value="Dr. Ramesh Patel" placeholder="Enter full name">
-                                </div>
-                                <div class="form-group">
-                                    <label><i class="fa-solid fa-phone"></i> Mobile Phone Number</label>
-                                    <input type="tel" id="settingUserPhone" value="+91 98765 43210" placeholder="10-digit mobile number">
-                                </div>
-                            </div>
-
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label><i class="fa-solid fa-envelope"></i> Official Email</label>
-                                    <input type="email" id="settingUserEmail" value="dr.patel@dahd.nic.in" placeholder="Official gov/org email">
-                                </div>
-                                <div class="form-group">
-                                    <label><i class="fa-solid fa-id-badge"></i> Officer / Employee ID</label>
-                                    <input type="text" id="settingUserId" value="VET-OFFICER-2026-904" placeholder="Govt / Paravet ID">
-                                </div>
-                            </div>
-
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label><i class="fa-solid fa-briefcase"></i> Role / Designation</label>
-                                    <select id="settingUserRole">
-                                        <option value="Senior Veterinary Officer" selected>Senior Veterinary Officer (SVO)</option>
-                                        <option value="Field Paravet">Field Paravet / Extension Worker</option>
-                                        <option value="District Surveillance Lead">District Surveillance Lead</option>
-                                        <option value="Diagnostic Lab Pathologist">Diagnostic Lab Pathologist</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label><i class="fa-solid fa-location-dot"></i> Assigned District / Block</label>
-                                    <input type="text" id="settingUserDistrict" value="Ghaziabad (Rampur Block A)" placeholder="Assigned Territory">
-                                </div>
-                            </div>
-
-                            <button type="button" class="btn-submit" onclick="saveUserProfileDetails()" style="padding: 0.65rem 1.2rem; font-size: 0.85rem; width: auto;">
-                                <i class="fa-solid fa-floppy-disk"></i> Save Profile Details
-                            </button>
-                        </div>
-
-                        <!-- 2. SURVEILLANCE & SMS DISPATCH PREFERENCES -->
-                        <div class="settings-section">
-                            <h4><i class="fa-solid fa-tower-broadcast"></i> Outbreak Triggers & Alert Preferences</h4>
-                            
-                            <div class="form-group" style="margin-top: 12px;">
-                                <label>Auto-SMS Containment Broadcast Radius</label>
-                                <select id="settingSmsRadius">
-                                    <option value="5">5 km Radius (Immediate Locality)</option>
-                                    <option value="10" selected>10 km Radius (Recommended Block Level)</option>
-                                    <option value="25">25 km Containment Zone</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label>High-Risk Disease Cluster Threshold</label>
-                                <select id="settingClusterThreshold">
-                                    <option value="1">1 Confirmed Critical Case (Anthrax/FMD)</option>
-                                    <option value="3" selected>3 Cases in Same Village (Outbreak Warning)</option>
-                                    <option value="5">5 Active Reports (Red Alert Broadcast)</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label>Emergency Channels</label>
-                                <div class="checkbox-grid" style="grid-template-columns: 1fr 1fr;">
-                                    <label class="custom-chk"><input type="checkbox" id="chkSms" checked> <span>Farmer SMS Alerts</span></label>
-                                    <label class="custom-chk"><input type="checkbox" id="chkIvr" checked> <span>IVR Voice Calls</span></label>
-                                </div>
-                            </div>
-
-                            <button type="button" class="btn-submit" onclick="alert('Surveillance alert rules updated successfully!')" style="padding: 0.65rem 1.2rem; font-size: 0.85rem; width: auto; background: var(--accent-blue);">
-                                <i class="fa-solid fa-sliders"></i> Update Outbreak Rules
-                            </button>
-                        </div>
-
-                        <!-- 3. OFFLINE STORAGE & DATA CLEARING -->
-                        <div class="settings-section" style="grid-column: 1 / -1;">
-                            <h4><i class="fa-solid fa-database"></i> Offline Cache & Device Persistence</h4>
-                            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 6px 0 12px 0;">Manage local storage data sync state for field use in low-network village zones.</p>
-                            
-                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                                <button type="button" class="action-btn" onclick="toggleMockOffline()"><i class="fa-solid fa-wifi-slash"></i> <div><strong>Toggle Offline Mode</strong><small>Simulate field connectivity loss</small></div></button>
-                                <button type="button" class="action-btn" onclick="clearLocalStorageData()"><i class="fa-solid fa-trash-can" style="color:#dc2626;"></i> <div><strong>Clear Cached Data</strong><small>Reset local test reports</small></div></button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ================= VACCINATION RECORDS ================= -->
-            <section id="vax-tab" class="tab-content">
-                <div class="card">
-                    <div class="card-head">
-                        <i class="fa-solid fa-syringe icon-accent"></i>
-                        <div>
-                            <h3>Livestock Immunization & Vaccination Registry</h3>
-                            <p class="subtitle">Verify whether an animal is vaccinated or unvaccinated against FMD, LSD, Brucella, and Blackquarter.</p>
-                        </div>
-                    </div>
-
-                    <div class="search-bar-wrap">
-                        <input type="text" id="vaxSearchInput" placeholder="Enter Animal Ear Tag UID (e.g. IND-2024-7856 or IND-2024-9021)">
-                        <button onclick="searchVaccinationRecord()" class="btn-search"><i class="fa-solid fa-magnifying-glass"></i> Check Status</button>
-                    </div>
-
-                    <div id="vaxResultContainer">
-                        <div class="vax-info-banner">
-                            <i class="fa-solid fa-circle-info"></i>
-                            <span>Enter any animal Ear Tag UID above to see completed vaccines, booster dates, or overdue unvaccinated status.</span>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ================= DIAGNOSTIC LABS ================= -->
-            <section id="lab-tab" class="tab-content">
-                <div class="card">
-                    <div class="card-head">
-                        <i class="fa-solid fa-microscope icon-accent"></i>
-                        <div>
-                            <h3>Animal Disease Diagnostic Lab (ADDL) Network</h3>
-                            <p class="subtitle">Track specimen transit, PCR/ELISA diagnostic validations, and laboratory confirmations.</p>
-                        </div>
-                    </div>
-
-                    <div class="table-responsive">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Sample ID</th>
-                                    <th>Report Ref</th>
-                                    <th>Specimen Protocol</th>
-                                    <th>Destination Lab</th>
-                                    <th>Chain Status</th>
-                                    <th>Diagnostic Result</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="labTableBody">
-                                <tr><td colspan="7" class="empty-text">No sample referrals logged yet.</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ================= HERD / TAG UID LOOKUP ================= -->
-            <section id="herd-tab" class="tab-content">
-                <div class="card">
-                    <div class="card-head">
-                        <i class="fa-solid fa-address-card icon-accent"></i>
-                        <div>
-                            <h3>Animal Health Record & Sickness History</h3>
-                            <p class="subtitle">Search complete previous disease reports and clinical history via Tag UID.</p>
-                        </div>
-                    </div>
-
-                    <div class="search-bar-wrap">
-                        <input type="text" id="tagSearchInput" placeholder="Enter 12-Digit Tag UID (e.g. IND-2024-7856)">
-                        <button onclick="searchAnimalTag()" class="btn-search"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
-                    </div>
-
-                    <div id="tagResultContainer"></div>
-                </div>
-            </section>
-        </main>
-    </div>
-
-    <!-- ================= CASE DETAILS & QUICK ACTIONS MODAL ================= -->
-    <div id="caseDetailsModal" class="custom-modal" style="display:none;">
-        <div class="modal-backdrop" onclick="closeCaseModal()"></div>
-        <div class="modal-dialog">
-            <div class="modal-header">
-                <div>
-                    <span class="badge-active" id="modalCaseStatusBadge">ACTIVE</span>
-                    <h3 id="modalCaseId">CASE-2026-001247</h3>
-                    <small id="modalCaseTimestamp" style="color:#64748b;">Reported recently</small>
-                </div>
-                <button class="btn-close-modal" onclick="closeCaseModal()"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-
-            <div class="modal-body-grid">
-                <div class="case-meta-panel">
-                    <div class="meta-row">
-                        <div><span class="lbl-dim">Animal ID:</span> <strong id="modalTag">IND-2024-7856</strong></div>
-                        <div><span class="lbl-dim">Species:</span> <strong id="modalSpecies">Cattle</strong></div>
-                        <div><span class="lbl-dim">Age:</span> <strong id="modalAge">4 Years</strong></div>
-                        <div><span class="lbl-dim">Location:</span> <strong id="modalLocation">Rampur Village, Block A</strong></div>
-                    </div>
-                    <div class="meta-row" style="margin-top:10px;">
-                        <div><span class="lbl-dim">Owner:</span> <strong id="modalOwner">Ramesh Kumar</strong></div>
-                        <div><span class="lbl-dim">Contact:</span> <strong id="modalContact">+91 98765 43210</strong></div>
-                        <div><span class="lbl-dim">Priority:</span> <span id="modalPriority" class="priority-pill HIGH">HIGH</span></div>
-                    </div>
-
-                    <div class="section-divider"></div>
-
-                    <h4><i class="fa-solid fa-stethoscope"></i> Symptoms & Clinical Assessment</h4>
-                    <div id="modalSymptomsList" class="tags-cloud"></div>
-                    
-                    <div class="clinical-assessment-box">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <strong>Clinical Assessment: <span id="modalDiagnosis" style="color:#dc2626;">FMD Suspected</span></strong>
-                            <span class="ai-confidence-badge" id="modalConfidence">94% AI Confidence</span>
-                        </div>
-                    </div>
-
-                    <div class="section-divider"></div>
-
-                    <h4><i class="fa-solid fa-list-check"></i> Actions Taken</h4>
-                    <div class="timeline-stepper">
-                        <div class="step-item completed">
-                            <div class="step-icon"><i class="fa-solid fa-check"></i></div>
-                            <div class="step-content">
-                                <strong>Sample Collection</strong>
-                                <span class="step-status">Completed</span>
-                                <small>Dispatched under cold chain protocol (4°C)</small>
-                            </div>
-                        </div>
-                        <div class="step-item active">
-                            <div class="step-icon"><i class="fa-solid fa-spinner fa-spin"></i></div>
-                            <div class="step-content">
-                                <strong>Lab Test Ordered</strong>
-                                <span class="step-status in-progress">In Progress</span>
-                                <small>State Animal Disease Diagnostic Laboratory</small>
-                            </div>
-                        </div>
-                        <div class="step-item" id="stepVetVisit">
-                            <div class="step-icon"><i class="fa-solid fa-calendar-check"></i></div>
-                            <div class="step-content">
-                                <strong>Veterinary Visit</strong>
-                                <span class="step-status" id="stepVisitStatus">Scheduled</span>
-                                <small id="stepVisitDetail">Dr. In-Charge</small>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="section-divider"></div>
-                    <h4><i class="fa-solid fa-clipboard"></i> Case Notes & Logs</h4>
-                    <pre id="modalNotes" class="notes-display-box">No notes attached.</pre>
-                </div>
-
-                <div class="case-actions-panel">
-                    <h4><i class="fa-solid fa-bolt"></i> Quick Actions</h4>
-                    
-                    <button class="action-btn" onclick="triggerUpdateStatus()">
-                        <i class="fa-solid fa-pen-to-square"></i>
-                        <div>
-                            <strong>Update Status</strong>
-                            <small>Under Investigation / Resolved</small>
-                        </div>
-                    </button>
-
-                    <button class="action-btn" onclick="triggerScheduleVisit()">
-                        <i class="fa-solid fa-calendar-plus"></i>
-                        <div>
-                            <strong>Schedule Visit</strong>
-                            <small>Assign on-site vet inspection</small>
-                        </div>
-                    </button>
-
-                    <button class="action-btn" onclick="triggerAddNote()">
-                        <i class="fa-solid fa-comment-medical"></i>
-                        <div>
-                            <strong>Add Note</strong>
-                            <small>Append medical / field logs</small>
-                        </div>
-                    </button>
-
-                    <button class="action-btn report-btn" onclick="triggerGenerateReport()">
-                        <i class="fa-solid fa-file-pdf"></i>
-                        <div>
-                            <strong>Generate Report</strong>
-                            <small>Download / Print Clinical Slip</small>
-                        </div>
-                    </button>
                 </div>
             </div>
+        </section>
+
+        <!-- Tab 5: Advisories & SMS Broadcast -->
+        <section id="tab-bulletins" class="tab-content">
+            <div class="gov-card max-w-3xl mx-auto">
+                <div class="card-head border-b">
+                    <h2>Broadcast Official Outbreak Containment SMS (Vonage Gateway)</h2>
+                </div>
+                <div class="p-4">
+                    <form id="sms-broadcast-form" class="gov-form">
+                        <div class="form-group">
+                            <label for="broadcastPhone">Recipient Mobile Phone *</label>
+                            <input type="tel" id="broadcastPhone" class="gov-input" value="9616958410" required>
+                        </div>
+                        <div class="form-group mt-3">
+                            <label for="broadcastDisease">Suspected Outbreak Classification</label>
+                            <select id="broadcastDisease" class="gov-input">
+                                <option value="Foot and Mouth Disease (FMD)">Foot & Mouth Disease (FMD)</option>
+                                <option value="Lumpy Skin Disease (LSD)">Lumpy Skin Disease (LSD)</option>
+                                <option value="Hemorrhagic Septicemia (HS)">Hemorrhagic Septicemia (HS)</option>
+                                <option value="Anthrax Peracute Spores">Anthrax</option>
+                            </select>
+                        </div>
+                        <div class="form-group mt-3">
+                            <label for="broadcastMessage">Official Advisory Message Body</label>
+                            <textarea id="broadcastMessage" class="gov-input font-mono" rows="3">EMERGENCY ADVISORY: Suspected livestock contagion in your block sector. Quarantine herd, restrict shared watering ponds, and dial 1962.</textarea>
+                        </div>
+                        <button type="submit" id="btn-send-sms" class="btn btn-primary mt-3">
+                            <span>Transmit Live SMS via Vonage</span>
+                        </button>
+                    </form>
+                    <div id="sms-status-banner" class="mt-3 hidden"></div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="gov-footer">
+        <div class="footer-inner">
+            <p>© 2026 Government of India — Department of Animal Husbandry & Dairying. National Animal Disease Control Programme (NADCP).</p>
         </div>
-    </div>
+    </footer>
 
-    <div id="smsToast" class="sms-toast-modal" style="display:none;">
-        <div class="sms-toast-header">
-            <i class="fa-solid fa-tower-broadcast"></i>
-            <span>Emergency SMS/IVR Broadcast Triggered</span>
-            <button onclick="document.getElementById('smsToast').style.display='none'"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        <p id="smsToastBody">📡 Sent High-Risk containment SMS to registered cattle farmers in the sector.</p>
-    </div>
-
-    <!-- GOOGLE TRANSLATE ENGINE -->
-    <script type="text/javascript">
-        function googleTranslateElementInit() {
-            new google.translate.TranslateElement({
-                pageLanguage: 'en',
-                includedLanguages: 'en,hi,mr',
-                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
-                autoDisplay: false
-            }, 'google_translate_element');
-        }
-    </script>
-    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
-
+    <!-- Scripts -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="app.js"></script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({pageLanguage: 'en', includedLanguages: 'en,hi,mr,bn,te,ta,gu,pa'}, 'google_translate_element');
+        }
+    </script>
 </body>
 </html>
